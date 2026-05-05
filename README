@@ -1,0 +1,120 @@
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+stripe listen --forward-to localhost:5000/api/webhook
+
+# MongoEngine CRUD Operations Guide
+
+This project uses **MongoEngine** as an ORM for MongoDB. Below is a guide on how to perform basic CRUD operations using the defined models.
+
+## 1. Create (Insert)
+To create a new document, instantiate the model class and call the `.save()` method.
+
+```python
+from app.Model.OrganizationAccount import OrganizationAccount
+from app.Model.enum.companySize import companySize
+from app.Model.enum.companyIndustry import companyIndustry
+
+new_org = OrganizationAccount(
+    companyName="Skillio Tech",
+    companySize=companySize.MEDIUM,
+    companyIndustry=companyIndustry.IT,
+    companyEmail="contact@skillio.tech",
+    accountStatus=True
+)
+new_org.save()
+```
+
+## 2. Read (Query)
+Use the `.objects` attribute to query documents.
+
+- **Fetch all documents**:
+  ```python
+  all_orgs = OrganizationAccount.objects()
+  ```
+
+- **Filter by specific fields**:
+  ```python
+  it_orgs = OrganizationAccount.objects(companyIndustry=companyIndustry.IT)
+  ```
+
+- **Get a single document (by ID or unique field)**:
+  ```python
+  org = OrganizationAccount.objects.get(id="60d5ecb8...")
+  ```
+
+- **First record matching criteria**:
+  ```python
+  first_org = OrganizationAccount.objects(companyName="Skillio Tech").first()
+  ```
+
+## 3. Update
+You can update a document by modifying its attributes and saving, or by using the `.update()` method.
+
+- **Option A: Modify and Save**:
+  ```python
+  org = OrganizationAccount.objects.get(companyName="Skillio Tech")
+  org.companyEmail = "new-email@skillio.tech"
+  org.save()
+  ```
+
+- **Option B: Using `.update()` (Atomic)**:
+  ```python
+  OrganizationAccount.objects(companyName="Skillio Tech").update(set__accountStatus=False)
+  ```
+
+## 4. Delete
+To delete a document, call the `.delete()` method on a document instance or a queryset.
+
+- **Delete a single instance**:
+  ```python
+  org = OrganizationAccount.objects.get(id="60d5ecb8...")
+  org.delete()
+  ```
+
+- **Delete multiple documents**:
+  ```python
+  OrganizationAccount.objects(accountStatus=False).delete()
+  ```
+
+## 5. Working with Enums
+When using `EnumField`, you should pass the Enum member itself rather than the string value.
+
+```python
+from app.Model.enum.companySize import companySize
+
+# Correct
+org.companySize = companySize.LARGE
+
+# MongoEngine handles the conversion to the stored value automatically
+```
+
+## 6. Embedded Documents
+To work with embedded documents like `PlanInformation`, create the embedded instance and assign it to the parent field.
+
+```python
+from app.Model.OrganizationAccount import PlanInformation, OrganizationAccount
+import datetime
+
+plan = PlanInformation(
+    planID="plan_premium",
+    subscriptionStatus=True,
+    subStartedDate=datetime.datetime.now()
+)
+
+org = OrganizationAccount.objects.get(companyName="Skillio Tech")
+org.planInformation = plan
+org.save()
+```
+
+## Running Tests
+To run all backend test cases, use `pytest` from the `skillio-backend` directory:
+
+```bash
+cd skillio-backend
+pytest
+or
+pytest --ignore=test_out.txt
+```
+
+Tests perform actual operations on the database specified in your environment (`MONGO_DB_URL`) or a local `test_db` by default. The test database is dropped before each test that uses the `clean_db` fixture.
