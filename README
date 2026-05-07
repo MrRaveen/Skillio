@@ -1,7 +1,21 @@
+## Important commands
+```
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 stripe listen --forward-to localhost:5000/api/webhook
+celery -A celery_worker.celery_app worker --loglevel=info
+```
+## Test API curl requests
+- AI test
+```
+curl -X POST http://localhost:5000/test-celery      -H "Content-Type: application/json"      -d '{
+       "target_skills": ["React", "TypeScript", "Tailwind CSS"],
+       "role": "Frontend Developer"
+     }'
+```
+## AI Requirements
+![alt text](image.png)
 
 # MongoEngine CRUD Operations Guide
 
