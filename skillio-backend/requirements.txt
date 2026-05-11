@@ -10,3 +10,8 @@ langchain
 redis
 Celery
 langchain-groq
+certifi 
+pymongo[srv]
+mdtopptx
+python-pptx
+gTTS
