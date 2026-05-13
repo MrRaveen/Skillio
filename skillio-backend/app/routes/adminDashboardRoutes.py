@@ -12,6 +12,7 @@ from app.requests.employeeTeamReq import employeeTeamReq
 from app.requests.definedSkillReq import definedSkillReq
 from app.requests.employeeRoleReq import employeeRoleReq
 from app.response.orgProfileRes import orgProfileRes
+from app.Model.Plan import Plan
 from app.decorators import token_required
 from app.Service.companyManageService import (updateCompanyByID, getOrgProfile)
 from app.Service.employeeManageService import (
@@ -22,6 +23,7 @@ from app.Service.employeeManageService import (
     deleteEmployee,
     assignTeam
 )
+from app.Tasks.generate_course import generate_initial_questions
 from app.Service.departmentManageService import (
     createDepartment,
     getAllDepartments,
@@ -848,6 +850,23 @@ def deleteRoleByID(decorated_data, roleID):
             "message": f"Unknown error occurred : {str(e)}"
         }), 500
 
+@adminDashboardRoutes.route('/start-training', methods=['POST'])
+@token_required
+def startTraining(decorated_data,target_skills: list[str], role: str,employeeID: str):
+    try:
+        orgAccID = decorated_data.get('id')
+        task = generate_initial_questions.delay(target_skills, role, employeeID, orgAccID)
+        return jsonify({
+            "status": "success",
+            "message": "Celery task triggered",
+            "task_id": task.id
+        }), 202
+    except Exception as e:
+        return jsonify({
+            "status": "failed",
+            "message": str(e)
+        }), 500    
+
 @adminDashboardRoutes.route('/generate-signature', methods=['GET'])
 def generate_signature():
     # 1. Generate a timestamp (signatures are valid for 1 hour by default)
@@ -875,5 +894,17 @@ def generate_signature():
         'folder': 'skillio-media'
     }), 200
 
-
-
+@adminDashboardRoutes.route('/plans', methods=['GET'])
+def get_plans():
+    try:
+        plans = Plan.objects.all()
+        import json
+        return jsonify({
+            "status": "success",
+            "data": [json.loads(plan.to_json()) for plan in plans]
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "failed",
+            "message": f"Unknown error occurred : {str(e)}"
+        }), 500

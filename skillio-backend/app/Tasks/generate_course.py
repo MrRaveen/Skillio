@@ -9,7 +9,11 @@ from app.Model.TrainingContent import (
     Question, TrainingContent, Module, Article, Paragraph, 
     Slide, VoiceCover, EvaluationStatus, TotalEvaluation
 )
+from app.Model.Training import Training
+from app.Model.enum.trainingStatus import trainingStatus
+from app.mocks.ml_mock import mock_score_predictor
 from app.Model.enum.proficiencyLevelInitialQuestions import proficiencyLevelInitialQuestions
+
 from gtts import gTTS
 from langchain_core.output_parsers import StrOutputParser
 
@@ -79,7 +83,7 @@ class ModuleEvaluationSchema(BaseModel):
     )
 
 @shared_task(bind=True)
-def generate_initial_questions(self, target_skills: list[str], role: str):
+def generate_initial_questions(self, target_skills: list[str], role: str,employeeID: str, organizationID:str):
     try:
         # 1. Use local variables instead of 'self.llm'
         api_key = os.getenv('GROQ_KEY')
@@ -118,7 +122,26 @@ def generate_initial_questions(self, target_skills: list[str], role: str):
         newTraining = TrainingContent(
             initialQuestions=allInitialQuestions
         )    
-        newTraining.save()
+        saved_training = newTraining.save()
+        #get the previous train if available
+        previousTrain = Training.objects(employeeID=employeeID)
+        if previousTrain:
+            predictedScore = mock_score_predictor()
+        else:
+            predictedScore = 0.5    
+        newParentTraining = Training(
+            employeeID=employeeID,
+            growth = 0.0,
+            performanceIncrease = 0.0,
+            trainingStatus = trainingStatus.PENDING,
+            trainingContentID = str(saved_training.id),
+
+            trainingPassStatus = False,
+            extractedNewSkillsInModeule = [],
+            predictedFinalScore = predictedScore,
+            organizationID = organizationID
+        )
+        newParentTraining.save()
 
         # 4. Return the parsed JSON dictionary
         return generated_test.model_dump()
@@ -128,7 +151,7 @@ def generate_initial_questions(self, target_skills: list[str], role: str):
         self.retry(exc=exc, countdown=5, max_retries=3)
 
 @shared_task(bind=True)
-def create_course(self, contentID: str, role: str, target_skills: list[str], proficiencyLevel: proficiencyLevelInitialQuestions):
+def create_course(self, contentID: str, role: str, target_skills: list[str], proficiencyLevel: proficiencyLevelInitialQuestions, employeeID: str):
     try:
         # Convert string to enum if necessary (for Celery serialization)
         if isinstance(proficiencyLevel, str):

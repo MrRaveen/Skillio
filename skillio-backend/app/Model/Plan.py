@@ -5,6 +5,8 @@ class Plan(db.Document):
     meta = {'collection': 'plans'}
     stripePriceID = db.StringField()
     name = db.StringField()
+    description = db.StringField()
     priceMonth = db.FloatField()
     priceYear = db.FloatField()
     features = db.ListField(db.StringField())
+    isPopular = db.BooleanField(default=False)

@@ -5,6 +5,7 @@ pydantic[email]
 pytest
 stripe
 PyJWT
+mailjet-rest
 cloudinary
 langchain
 redis
@@ -15,3 +16,5 @@ pymongo[srv]
 mdtopptx
 python-pptx
 gTTS
+flask-cors
+

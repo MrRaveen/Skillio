@@ -1,8 +1,8 @@
 from app.Model.OrganizationAccount import OrganizationAccount
 from functools import wraps
-from flask import request, jsonify
 from flask import request, jsonify, current_app
 import jwt
+import os
 
 def token_required(f):
     @wraps(f)
@@ -22,7 +22,7 @@ def token_required(f):
             # decode() verifies the signature and expiration automatically
             decoded_payload = jwt.decode(
                 token, 
-                current_app.config['SECRET_KEY'], 
+                os.getenv('JWT_SECRET'), 
                 algorithms=["HS256"]
             )
             

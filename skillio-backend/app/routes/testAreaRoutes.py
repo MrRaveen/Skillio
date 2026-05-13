@@ -10,9 +10,12 @@ def test_celery_task():
         data = request.get_json()
         target_skills = data.get('target_skills', ["Python", "Flask"])
         role = data.get('role', "Software Engineer")
+        employeeID = data.get('employeeID')
+        organizationID = data.get('organizationID')
         
         # Trigger the task asynchronously
-        task = generate_initial_questions.delay(target_skills, role)
+        task = generate_initial_questions.delay(target_skills, role, employeeID, organizationID)
+
         
         return jsonify({
             "status": "success",

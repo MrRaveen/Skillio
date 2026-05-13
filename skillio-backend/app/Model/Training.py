@@ -10,6 +10,7 @@ class Training(db.Document):
     trainingStatus = db.EnumField(trainingStatus)
     trainingContentID = db.StringField()
     trainingPassStatus = db.BooleanField()
-    adminPrompt = db.StringField()
     extractedNewSkillsInModeule = db.ListField(db.StringField())
-    predictedFinalScore = db.BooleanField()
+    predictedFinalScore = db.FloatField()
+
+    organizationID = db.StringField()

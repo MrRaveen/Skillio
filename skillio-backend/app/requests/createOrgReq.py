@@ -5,7 +5,6 @@ from app.Model.enum.companySize import companySize
 from app.Model.enum.companyIndustry import companyIndustry
 
 class createOrgReq(BaseModel):
-    orgID: str
     companyName: str
     companySize: companySize
     companyIndustry: companyIndustry

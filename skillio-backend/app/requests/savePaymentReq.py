@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class savePaymentReq(BaseModel):
+    orgID: str
     planIDInternal: str
     stripe_customer_id: str
     stripe_subscription_id: str

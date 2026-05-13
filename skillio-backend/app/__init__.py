@@ -17,8 +17,10 @@ db = MongoEngine()
 from app.routes.loginRoutes import loginRoutes
 from app.routes.adminDashboardRoutes import adminDashboardRoutes
 from app.routes.testAreaRoutes import testAreaBp
+from flask_cors import CORS
 def create_app(config_class=Config):
     app = Flask(__name__)
+    CORS(app)
     cloudinary.config(
         cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
         api_key=os.getenv('CLOUDINARY_API_KEY'),

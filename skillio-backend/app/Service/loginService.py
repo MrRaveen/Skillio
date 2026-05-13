@@ -2,6 +2,8 @@ from app.requests.createOrgReq import createOrgReq
 from app.requests.savePaymentReq import savePaymentReq
 from app.Model.OrganizationAccount import OrganizationAccount, PaymentInformation
 import datetime
+from mongoengine.errors import DoesNotExist
+
 
 def save_payment_info(reqData: savePaymentReq):
     try:
@@ -15,41 +17,57 @@ def save_payment_info(reqData: savePaymentReq):
             current_period_start=reqData.current_period_start
         )
         
-        # Create new organization account with just payment info and inactive status
-        new_org = OrganizationAccount(
-            accountStatus=False,
-            paymentInfo=payment_info
+        # Find the existing organization account
+        org = OrganizationAccount.objects.get(id=reqData.orgID)
+        org.paymentInfo = payment_info
+        org.accountStatus = True # Activate the account
+        
+        # Also update basic plan info
+        from app.Model.OrganizationAccount import PlanInformation
+        org.planInformation = PlanInformation(
+            planID=reqData.planIDInternal,
+            subStartedDate=datetime.datetime.now()
         )
-        new_org.save()
-        return new_org
+        
+        org.save()
+        return org
     except Exception as e:
         raise e
 
 def create_org_acc(reqData: createOrgReq):
     try:
-        # Fetch the existing organization account created during the payment step
-        org = OrganizationAccount.objects.get(id=reqData.orgID)
-        
-        # Update organization account details
-        org.accountStatus = True
-        org.companyName = reqData.companyName
-        org.companySize = reqData.companySize
-        org.companyIndustry = reqData.companyIndustry
-        org.companyEmail = reqData.companyEmail
-        org.contactNumber = reqData.contactNumber
-        org.ownerEmail = reqData.ownerEmail
-        org.personalNumber = reqData.personalNumber
-        org.password = reqData.password  # NOTE: In a real app, hash this!
-        org.address = reqData.address
-        org.city = reqData.city
-        org.state = reqData.state
-        org.zipCode = reqData.zipCode
-        org.country = reqData.country
-        org.companyWebsiteUrl = reqData.companyWebsiteUrl
-        org.companyLogoUrl = reqData.companyLogoUrl
-        org.companyBannerUrl = reqData.companyBannerUrl
+        # Create new organization account
+        org = OrganizationAccount(
+            accountStatus = True,
+            companyName = reqData.companyName,
+            companySize = reqData.companySize,
+            companyIndustry = reqData.companyIndustry,
+            companyEmail = reqData.companyEmail,
+            contactNumber = reqData.contactNumber,
+            ownerEmail = reqData.ownerEmail,
+            personalNumber = reqData.personalNumber,
+            password = reqData.password,  # NOTE: In a real app, hash this!
+            address = reqData.address,
+            city = reqData.city,
+            state = reqData.state,
+            zipCode = reqData.zipCode,
+            country = reqData.country,
+            companyWebsiteUrl = reqData.companyWebsiteUrl,
+            companyLogoUrl = reqData.companyLogoUrl,
+            companyBannerUrl = reqData.companyBannerUrl
+        )
         
         org.save()
         return org
+    except Exception as e:
+        raise e
+
+def verify_org_login(email, password):
+    try:
+        # Search for organization account with matching ownerEmail and password
+        org = OrganizationAccount.objects.get(ownerEmail=email, password=password)
+        return org
+    except DoesNotExist:
+        return None
     except Exception as e:
         raise e
