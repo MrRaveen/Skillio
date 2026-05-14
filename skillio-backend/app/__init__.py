@@ -17,6 +17,7 @@ db = MongoEngine()
 from app.routes.loginRoutes import loginRoutes
 from app.routes.adminDashboardRoutes import adminDashboardRoutes
 from app.routes.testAreaRoutes import testAreaBp
+from app.routes.dispatcher import dispatcher
 from flask_cors import CORS
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -37,5 +38,6 @@ def create_app(config_class=Config):
     app.register_blueprint(loginRoutes)
     app.register_blueprint(adminDashboardRoutes)
     app.register_blueprint(testAreaBp)
+    app.register_blueprint(dispatcher)
     db.init_app(app)
     return app

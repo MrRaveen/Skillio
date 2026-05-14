@@ -7,6 +7,7 @@ class updateEmployeeByIDReq(BaseModel):
     employeeDepartmentID: Optional[str] = None
     teamID: Optional[str] = None
     email: EmailStr
+    password: Optional[str] = None
     contactnumber: Optional[str] = None
     address: Optional[str] = None
     profileImageUrl: Optional[str] = None

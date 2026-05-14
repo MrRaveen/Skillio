@@ -14,6 +14,10 @@ curl -X POST http://localhost:5000/test-celery      -H "Content-Type: applicatio
        "role": "Frontend Developer"
      }'
 ```
+
+```
+curl -X POST http://127.0.0.1:5000/test-create-course      -H "Content-Type: application/json"      -d '{"contentID": "6a018574793ebdac8728c2f3","role": "Software Engineer","target_skills": ["Python", "Flask", "Celery"],"proficiencyLevel": "Medium"}'
+```
 ## AI Requirements
 ![alt text](image.png)
 

@@ -13,7 +13,7 @@ from app.Model.Training import Training
 from app.Model.enum.trainingStatus import trainingStatus
 from app.mocks.ml_mock import mock_score_predictor
 from app.Model.enum.proficiencyLevelInitialQuestions import proficiencyLevelInitialQuestions
-
+from app.routes.dispatcher import push_to_org
 from gtts import gTTS
 from langchain_core.output_parsers import StrOutputParser
 
@@ -142,8 +142,15 @@ def generate_initial_questions(self, target_skills: list[str], role: str,employe
             organizationID = organizationID
         )
         newParentTraining.save()
-
+        message = {
+            "status":"success",
+            "type":"AI",
+            "message":"Initial questions are created",
+            "additionalData":generated_test.model_dump()
+        }
+        print(f"DEBUG: [TASK] Task generate_initial_questions finished for Org {organizationID}. Pushing message type: {message['type']}", flush=True)
         # 4. Return the parsed JSON dictionary
+        push_to_org(organizationID,message)#push to channel
         return generated_test.model_dump()
 
     except Exception as exc:

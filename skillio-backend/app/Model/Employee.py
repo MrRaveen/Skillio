@@ -10,6 +10,7 @@ class Employee(db.Document):
     employeeDepartmentID = db.StringField()
     teamID = db.StringField()
     email = db.EmailField()
+    password = db.StringField()
     contactnumber = db.StringField()
     address = db.StringField()
     profileImageUrl = db.StringField()

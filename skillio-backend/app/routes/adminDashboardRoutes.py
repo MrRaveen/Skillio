@@ -13,6 +13,7 @@ from app.requests.definedSkillReq import definedSkillReq
 from app.requests.employeeRoleReq import employeeRoleReq
 from app.response.orgProfileRes import orgProfileRes
 from app.Model.Plan import Plan
+from app.Model.OrganizationAccount import OrganizationAccount
 from app.decorators import token_required
 from app.Service.companyManageService import (updateCompanyByID, getOrgProfile)
 from app.Service.employeeManageService import (
@@ -24,6 +25,7 @@ from app.Service.employeeManageService import (
     assignTeam
 )
 from app.Tasks.generate_course import generate_initial_questions
+from app.mocks.task_mock import mock_ai_training_task
 from app.Service.departmentManageService import (
     createDepartment,
     getAllDepartments,
@@ -68,7 +70,8 @@ def createEmployeesFun(decorated_data):
         validatedData = createEmployeeReq(**requestData)
         savedResult = createEmployees(
             requestData=validatedData,
-            companyAccID=decorated_data.get('id')
+            companyAccID=decorated_data.get('id'),
+            autoGeneratePass=validatedData.autoGeneratePassStatus
         )
         if savedResult:
             return jsonify({
@@ -105,7 +108,7 @@ def getEmployees(decorated_data):
         import json
         return jsonify({
             "status": "success",
-            "data": [json.loads(employee.to_json()) for employee in employees]
+            "data": [employee.model_dump() for employee in employees]
         }), 200
     except Exception as e:
         return jsonify({
@@ -852,10 +855,22 @@ def deleteRoleByID(decorated_data, roleID):
 
 @adminDashboardRoutes.route('/start-training', methods=['POST'])
 @token_required
-def startTraining(decorated_data,target_skills: list[str], role: str,employeeID: str):
+def startTraining(decorated_data):
     try:
+        data = request.get_json()
+        target_skills = data.get('target_skills')
+        role = data.get('role')
+        employeeID = data.get('employeeID')
+        
+        if not all([target_skills, role, employeeID]):
+            return jsonify({
+                "status": "failed",
+                "message": "Missing required fields (target_skills, role, employeeID)"
+            }), 400
+
         orgAccID = decorated_data.get('id')
-        task = generate_initial_questions.delay(target_skills, role, employeeID, orgAccID)
+        # task = generate_initial_questions.delay(target_skills, role, employeeID, orgAccID)
+        task = mock_ai_training_task.delay(orgAccID)
         return jsonify({
             "status": "success",
             "message": "Celery task triggered",
@@ -866,6 +881,23 @@ def startTraining(decorated_data,target_skills: list[str], role: str,employeeID:
             "status": "failed",
             "message": str(e)
         }), 500    
+
+@adminDashboardRoutes.route('/get-all-training', methods=['GET'])
+@token_required
+def getAllTraining(decorated_data):
+    try:
+        orgID = decorated_data.get('id')
+        from app.Service.trainingService import getAllTrainingData
+        trainings = getAllTrainingData(orgID)
+        return jsonify({
+            "status": "success",
+            "data": trainings
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "failed",
+            "message": str(e)
+        }), 500
 
 @adminDashboardRoutes.route('/generate-signature', methods=['GET'])
 def generate_signature():
@@ -908,3 +940,78 @@ def get_plans():
             "status": "failed",
             "message": f"Unknown error occurred : {str(e)}"
         }), 500
+
+#stripe sub management
+import stripe
+@adminDashboardRoutes.route('/create-customer-portal-session-update', methods=['POST'])
+@token_required
+def create_portal_session(decorated_data):
+    try:
+        data = request.get_json()
+        price_id = data.get('priceId')
+        planIDInternal = data.get('planID')
+        return_url = "http://localhost:3000/Dashboard"
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': price_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=f"{return_url}",
+            cancel_url=f"{os.getenv('FRONTEND_URL')}/cancel",
+            metadata={
+                'planIDInternal': planIDInternal,
+                'orgID': decorated_data.get('id')
+            }
+        )
+        return jsonify({"url": session.url}), 200
+    except Exception as e:
+        print(f"Error creating portal session: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@adminDashboardRoutes.route('/get-subscription-data', methods=['GET'])
+@token_required
+def getSubData(decorated_data):
+    try:
+        org_id = decorated_data.get('id')
+        org = OrganizationAccount.objects(id=org_id).first()
+        
+        if not org:
+            return jsonify({"status": "failed", "message": "Organization not found"}), 404
+            
+        if not org.paymentInfo:
+            return jsonify({"status": "failed", "message": "No payment information found"}), 404
+            
+        planID = org.paymentInfo.planIDInternal
+        if not planID:
+            return jsonify({"status": "failed", "message": "No plan assigned"}), 404
+            
+        planDetails = Plan.objects(id=planID).first()
+        if not planDetails:
+            return jsonify({"status": "failed", "message": "Plan details not found"}), 404
+            
+        # Convert to dictionary for response
+        plan_dict = planDetails.to_mongo().to_dict()
+        if '_id' in plan_dict:
+            plan_dict['id'] = str(plan_dict['_id'])
+            del plan_dict['_id']
+            
+        return jsonify({
+            "status": "success",
+            "plan": plan_dict,
+            "subscription": {
+                "status": org.paymentInfo.stripe_subscription_status,
+                "current_period_end": org.paymentInfo.current_period_end.isoformat() if org.paymentInfo.current_period_end else None,
+                "current_period_start": org.paymentInfo.current_period_start.isoformat() if org.paymentInfo.current_period_start else None,
+                "stripe_subscription_id": org.paymentInfo.stripe_subscription_id
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in getSubData: {str(e)}")
+        return jsonify({
+            "status": "failed",
+            "message": f"Server error: {str(e)}"
+        }), 500
+

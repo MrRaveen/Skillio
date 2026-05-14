@@ -3,8 +3,24 @@ from app.requests.updateEmployeeByIDReq import updateEmployeeByIDReq
 from app.requests.assignTeamReq import assignTeamReq
 from app.Model.Employee import Employee
 
-def createEmployees(requestData: createEmployeeReq, companyAccID: str) -> bool:
+from app.Model.EmployeeRole import EmployeeRole
+from app.Model.DefinedSkill import DefinedSkill
+from app.Model.Department import Department
+from app.response.allEmployeeRes import allEmployeeRes
+import secrets
+import string
+
+def generate_secure_password(length=16):
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(secrets.choice(alphabet) for _ in range(length))
+    return password
+
+def createEmployees(requestData: createEmployeeReq, companyAccID: str,autoGeneratePass:bool) -> bool:
     try:
+        if autoGeneratePass:
+            password = generate_secure_password()
+        else:
+            password = requestData.password  
         newEmployee = Employee(
             companyAccID=companyAccID,
             employeeName=requestData.employeeName,
@@ -12,6 +28,7 @@ def createEmployees(requestData: createEmployeeReq, companyAccID: str) -> bool:
             employeeDepartmentID=requestData.employeeDepartmentID,
             teamID=requestData.teamID,
             email=requestData.email,
+            password=password,
             contactnumber=requestData.contactnumber,
             address=requestData.address,
             profileImageUrl=requestData.profileImageUrl
@@ -23,7 +40,44 @@ def createEmployees(requestData: createEmployeeReq, companyAccID: str) -> bool:
 
 def getAllEmployees(companyAccID: str):
     try:
-        return Employee.objects(companyAccID=companyAccID)
+        allEmRes = []
+        allEmployees = Employee.objects(companyAccID=companyAccID)
+        for employee in allEmployees:
+            skillSetNames = []
+            role = None
+            if employee.employeeRoleID:
+                role = EmployeeRole.objects(id=employee.employeeRoleID).first()
+            
+            role_name = "Unknown Role"
+            if role:
+                role_name = role.roleName
+                for skillID in role.roleSkillid:
+                    skill = DefinedSkill.objects(id=skillID).first()
+                    if skill:
+                        skillSetNames.append(skill.skill_name)
+            
+            dept = None
+            if employee.employeeDepartmentID:
+                dept = Department.objects(id=employee.employeeDepartmentID).first()
+            
+            dept_name = dept.deptName if dept else "Unknown Department"
+
+            resEmSin = allEmployeeRes(
+                employeeID=str(employee.id),
+                employeeName=employee.employeeName,
+                employeeRoleID=employee.employeeRoleID,
+                roleName=role_name,
+                deptName=dept_name,
+                allEmployeeRoleSkills=skillSetNames,
+                employeeDepartmentID=employee.employeeDepartmentID,
+                teamID=employee.teamID,
+                email=employee.email,
+                contactnumber=employee.contactnumber,
+                address=employee.address,
+                profileImageUrl=employee.profileImageUrl
+            )
+            allEmRes.append(resEmSin)    
+        return allEmRes
     except Exception as e:
         raise e
 
@@ -37,16 +91,20 @@ def updateEmployee(employeeID: str, companyAccID: str, updateData: updateEmploye
     try:
         employee = Employee.objects(id=employeeID, companyAccID=companyAccID).first()
         if employee:
-            employee.update(
-                employeeName=updateData.employeeName,
-                employeeRoleID=updateData.employeeRoleID,
-                employeeDepartmentID=updateData.employeeDepartmentID,
-                teamID=updateData.teamID,
-                email=updateData.email,
-                contactnumber=updateData.contactnumber,
-                address=updateData.address,
-                profileImageUrl=updateData.profileImageUrl
-            )
+            update_fields = {
+                "employeeName": updateData.employeeName,
+                "employeeRoleID": updateData.employeeRoleID,
+                "employeeDepartmentID": updateData.employeeDepartmentID,
+                "teamID": updateData.teamID,
+                "email": updateData.email,
+                "contactnumber": updateData.contactnumber,
+                "address": updateData.address,
+                "profileImageUrl": updateData.profileImageUrl
+            }
+            if updateData.password:
+                update_fields["password"] = updateData.password
+            
+            employee.update(**update_fields)
             return True
         return False
     except Exception as e:

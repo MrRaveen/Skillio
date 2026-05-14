@@ -147,6 +147,40 @@ def save_payment():
             print("Calling save_payment_info service...")
             new_org = save_payment_info(savePaymentData)
             print(f"Payment information successfully saved for Org ID: {new_org.id}")
+        elif event['type'] == 'customer.subscription.updated':
+            subscription = event['data']['object']
+            session_metadata = getattr(subscription, 'metadata', {})
+            org_id = session_metadata.get('orgID')
+            plan_id = session_metadata.get('planIDInternal')
+            
+            print(f"Handling subscription update for Org ID: {org_id}")
+            if org_id:
+                from app.Service.stripeServices import updateSubscription
+                # Extract first item's price
+                items = getattr(subscription, 'items', {})
+                data_list = getattr(items, 'data', [{}])
+                price = getattr(data_list[0], 'price', {})
+                stripe_price_id = getattr(price, 'id', None)
+
+                updateSubscription(
+                    orgID=org_id,
+                    newPlanIDinternal=plan_id,
+                    stripeCustomerID=subscription.customer,
+                    newSubID=subscription.id,
+                    newStripePriceID=stripe_price_id,
+                    current_period_end=datetime.fromtimestamp(subscription.current_period_end),
+                    currentPeriodStart=datetime.fromtimestamp(subscription.current_period_start),
+                    status=subscription.status
+                )
+            
+        elif event['type'] == 'customer.subscription.deleted':
+            subscription = event['data']['object']
+            session_metadata = getattr(subscription, 'metadata', {})
+            org_id = session_metadata.get('orgID')
+            if org_id:
+                from app.Service.stripeServices import deleteSubscription
+                deleteSubscription(orgID=org_id)
+
 
         # ALWAYS return a 200 to Stripe at the end to stop retries for unhandled events
         return jsonify({"success": True}), 200

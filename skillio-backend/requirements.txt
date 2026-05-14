@@ -17,4 +17,5 @@ mdtopptx
 python-pptx
 gTTS
 flask-cors
+flask-sse
 
