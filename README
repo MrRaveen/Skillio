@@ -1,3 +1,45 @@
+## Demo video
+https://drive.google.com/file/d/1OCE5iyreGN--iFjRNJ3OpfcdAhzAL0Ac/view?usp=sharing
+
+## Screenshots
+
+### Admin Dashboard
+1. **Landing Page**: The main entrance of the Skillio platform.
+![Landing Page](image-1.png)
+2. **Email Verification**: Secure onboarding flow for new organization accounts.
+![Email Verification](image-2.png)
+3. **Authentication**: Integrated login for both Company Administrators and Employees.
+![Login Page](image-3.png)
+4. **Employee Management**: Centralized directory to track talent across the organization.
+![Employees List](image-4.png)
+5. **AI Skill Identification**: Automated analysis of employee skills and training needs.
+![AI Skill Trainer](image-5.png)
+6. **Company Profile**: Customizable organization branding and contact information.
+![Company Profile](image-6.png)
+7. **Organization Structure**: Visual mapping of departments and teams.
+![Org Structure](image-7.png)
+8. **Billing & Settings**: Comprehensive control over subscriptions and job architecture.
+![Settings Overview](image-8.png)
+9. **Plan Management**: Flexible scaling options with multiple service tiers.
+![Subscription Plans](image-9.png)
+10. **Secure Payments**: Integrated Stripe checkout for seamless plan upgrades.
+![Stripe Checkout](image-10.png)
+11. **Job Role Definition**: Management of standard roles and required skill levels.
+![Job Roles](image-11.png)
+12. **Role Creation**: Tools to define new positions and proficiency expectations.
+![Create New Role](image-12.png)
+13. **AI Curriculum Generation**: Real-time generation of tailored evaluation modules.
+![AI Training Generation](image-13.png)
+
+### Employee Dashboard
+14. **Initial Assessment**: Adaptive baseline testing to personalize the learning path.
+![Skill Assessment](image-14.png)
+15. **Personalized Learning Paths**: AI-curated courses specifically for the employee's role.
+![Learning Paths](image-15.png)
+16. **Article-Based Learning**: Deep-dive content with executive summaries and detailed articles.
+![Module Articles](image-16.png)
+17. **Interactive Presentations**: Slide-based learning with integrated AI narration.
+![Module Slides](image-17.png)
 ## Important commands
 ```
 python3 -m venv .venv

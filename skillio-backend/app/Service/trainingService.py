@@ -59,6 +59,7 @@ def getAllTrainingData(orgID: str):
                 )
 
             newRes = TrainingRes(
+                id=str(train.id),
                 growth=train.growth,
                 performanceIncrease=train.performanceIncrease,
                 trainingStatus=train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus),

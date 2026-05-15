@@ -20,6 +20,23 @@ def encode_auth_token(org_ID):
     except Exception as e:
         return e
 
+def encode_employee_auth_token(employee_id, org_acc_id):
+    """
+    Generates the Auth Token for Employee
+    """
+    try:
+        payload = {
+            'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1),
+            'iat': datetime.datetime.now(datetime.timezone.utc),
+            'sub': employee_id,
+            'id': employee_id,
+            'orgAccID': org_acc_id,
+            'userType': 'employee'
+        }
+        return jwt.encode(payload, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except Exception as e:
+        return e
+
 def decode_auth_token(auth_token):
     """
     Decodes the auth token

@@ -869,8 +869,8 @@ def startTraining(decorated_data):
             }), 400
 
         orgAccID = decorated_data.get('id')
-        # task = generate_initial_questions.delay(target_skills, role, employeeID, orgAccID)
-        task = mock_ai_training_task.delay(orgAccID)
+        task = generate_initial_questions.delay(target_skills, role, employeeID, orgAccID)
+        # task = mock_ai_training_task.delay(orgAccID)
         return jsonify({
             "status": "success",
             "message": "Celery task triggered",

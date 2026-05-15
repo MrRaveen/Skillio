@@ -91,6 +91,7 @@ class TrainingContentRes(BaseModel):
     totalEvaluation: Optional[dict] = None
 
 class TrainingRes(BaseModel):
+    id: str
     growth: float
     performanceIncrease: float
     trainingStatus: str

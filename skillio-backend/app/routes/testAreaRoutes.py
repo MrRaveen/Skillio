@@ -36,6 +36,7 @@ def test_create_course_route():
         role = data.get('role', "Software Engineer")
         target_skills = data.get('target_skills', ["Python", "Flask"])
         proficiency_str = data.get('proficiencyLevel', "Medium")
+        employeeID = data.get('employeeID', "TEST_EMP_001")
         
         # Convert string to enum
         try:
@@ -47,7 +48,7 @@ def test_create_course_route():
             return jsonify({"status": "failed", "message": "contentID is required"}), 400
 
         # Trigger the task asynchronously
-        task = create_course.delay(contentID, role, target_skills, proficiency_level.value)
+        task = create_course.delay(contentID, role, target_skills, proficiency_level.value, employeeID)
         
         return jsonify({
             "status": "success",
