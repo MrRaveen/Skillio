@@ -28,7 +28,7 @@ def loginProcess():
                 "message": "email and password are required"
             }), 400
         
-        org = verify_org_login(email, password)
+        org = verrify_org_login(email, password)
         if not org:
             return jsonify({
                 "status": "error",
