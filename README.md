@@ -58,14 +58,162 @@ https://drive.google.com/file/d/1OCE5iyreGN--iFjRNJ3OpfcdAhzAL0Ac/view?usp=shari
 *   **Interactive Presentations**: Slide-based learning with integrated AI narration.
     ![Module Slides](image-17.png)
 
-## Important commands
+# 🚀 Getting Started & Setup Guide
+
+This comprehensive guide takes you from cloning the repository to a fully running local development environment for **Skillio**.
+
+---
+
+## 📋 Prerequisites
+Before setting up the project, ensure you have the following installed on your local machine:
+- **Node.js** (v18.x or higher)
+- **Python** (v3.10 or higher)
+- **MongoDB** (Local instance running, or a MongoDB Atlas cloud database)
+- **Redis** (Required for Celery task queuing and SSE notifications, running on `localhost:6379`)
+- **Stripe CLI** (For capturing payment webhook events locally)
+
+---
+
+## 🛠️ Infrastructure & Service Accounts Setup
+
+To fully run **Skillio**, you will need to set up credentials for the following external services:
+
+### 1. MongoDB Database Setup
+- **Option A (Local)**: Install MongoDB locally and get your connection string (usually `mongodb://localhost:27017/skillio_official`).
+- **Option B (Atlas Cloud)**: 
+  1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
+  2. Create a database user with read/write permissions.
+  3. Whitelist your current IP address (or `0.0.0.0/0` for testing).
+  4. Copy the connection string (e.g. `mongodb+srv://<username>:<password>@cluster.mongodb.net/?appName=Cluster0`).
+
+### 2. Redis Setup
+- **Linux**: Install via your package manager (e.g. `sudo apt install redis-server`) and run with `redis-server`.
+- **macOS**: Install via Homebrew (`brew install redis`) and start with `brew services start redis`.
+- **Windows**: Use WSL or install Redis via Memurai or MSI installer. Make sure it runs on standard port `6379`.
+
+### 3. Stripe Setup (Payments)
+1. Register for a free [Stripe Developer Account](https://stripe.com).
+2. Go to the Developer Dashboard to obtain your API Keys:
+   - **Publishable Key**: `pk_test_...`
+   - **Secret Key**: `sk_test_...`
+3. Download and authenticate the **Stripe CLI** to forward webhook events:
+   - Login: `stripe login`
+   - Listen for webhook events: `stripe listen --forward-to localhost:5000/api/webhook`
+   - Copy the webhook signing secret returned by CLI (e.g. `whsec_...`) into your `.env` configuration.
+
+### 4. Cloudinary Setup (Media & Profile Pictures)
+1. Sign up for a [Cloudinary](https://cloudinary.com) account.
+2. Navigate to your Dashboard and copy:
+   - **Cloud Name**
+   - **API Key**
+   - **API Secret**
+
+### 5. Groq Setup (AI Generation Engine)
+1. Create an account on [Groq Console](https://console.groq.com/).
+2. Generate an API Key under **API Keys**.
+3. Choose a fast model (e.g., `qwen/qwen3-32b` or similar depending on current configuration).
+
+### 6. Mailjet Setup (Transactional Email Alerts)
+1. Sign up for [Mailjet](https://www.mailjet.com/).
+2. Retrieve your **API Key** and **Secret Key** from the account configuration.
+3. Configure a verified **Sender Email** to dispatch security codes.
+
+---
+
+## 🔌 Environment Variables
+
+### Backend Configuration (`skillio-backend/.env`)
+Create a `.env` file in the `skillio-backend/` directory:
+```env
+MONGO_DB_URL=mongodb+srv://<username>:<password>@cluster0.mongodb.net/?appName=Cluster0
+STRIPE_SECRET=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+FRONTEND_URL=http://localhost:3000
+SECRET_KEY=your_flask_secret_key
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+GROQ_KEY=gsk_...
+GROQ_MODEL=qwen/qwen3-32b
+JWT_SECRET=your_jwt_secret_key
+MAILJET_SECRET=your_mailjet_secret_key
+MAILJET_API_KEY=your_mailjet_api_key
+MAILJET_SENDER_EMAIL=your_verified_sender_email@domain.com
 ```
-python3 -m venv .venv
+
+### Frontend Configuration (`skillio-frontend/.env.local`)
+Create a `.env.local` file in the `skillio-frontend/` directory:
+```env
+MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/?appName=Cluster0"
+MONGODB_DB="skillioDB"
+JWT_SECRET="your_jwt_secret_key"
+NEXT_PUBLIC_DEV_STATUS="development"
+NEXT_PUBLIC_BACKEND_URL="http://127.0.0.1:5000"
+```
+
+---
+
+## 🏃 Local Run Instructions
+
+To run the application locally, you will need 4 terminal tabs:
+
+### Step 1: Run local Redis server
+Ensure Redis is running:
+```bash
+redis-server
+```
+
+### Step 2: Start Backend Server
+1. Navigate to the backend directory:
+   ```bash
+   cd skillio-backend
+   ```
+2. Create and activate a Python virtual environment:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Run the Flask server:
+   ```bash
+   python run.py
+   ```
+   *The Flask API will run on `http://localhost:5000`.*
+
+### Step 3: Run Celery Worker (Background AI Generation tasks)
+Open a new terminal tab, navigate to the backend directory, activate virtual environment, and run:
+```bash
+cd skillio-backend
 source .venv/bin/activate
-pip install -r requirements.txt
-stripe listen --forward-to localhost:5000/api/webhook
 celery -A celery_worker.celery_app worker --loglevel=info
 ```
+
+### Step 4: Stripe Webhook Forwarding
+Open a new terminal tab and start forwarding Stripe webhook events:
+```bash
+stripe listen --forward-to localhost:5000/api/webhook
+```
+
+### Step 5: Start Frontend Server
+1. Open a new terminal tab and navigate to the frontend directory:
+   ```bash
+   cd skillio-frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+   *The Next.js frontend will run on `http://localhost:3000`.*
+
+---
 ## Test API curl requests
 - AI test
 ```
@@ -80,110 +228,6 @@ curl -X POST http://127.0.0.1:5000/test-create-course      -H "Content-Type: app
 ```
 ## AI Requirements
 ![alt text](image.png)
-
-# MongoEngine CRUD Operations Guide
-
-This project uses **MongoEngine** as an ORM for MongoDB. Below is a guide on how to perform basic CRUD operations using the defined models.
-
-## 1. Create (Insert)
-To create a new document, instantiate the model class and call the `.save()` method.
-
-```python
-from app.Model.OrganizationAccount import OrganizationAccount
-from app.Model.enum.companySize import companySize
-from app.Model.enum.companyIndustry import companyIndustry
-
-new_org = OrganizationAccount(
-    companyName="Skillio Tech",
-    companySize=companySize.MEDIUM,
-    companyIndustry=companyIndustry.IT,
-    companyEmail="contact@skillio.tech",
-    accountStatus=True
-)
-new_org.save()
-```
-
-## 2. Read (Query)
-Use the `.objects` attribute to query documents.
-
-- **Fetch all documents**:
-  ```python
-  all_orgs = OrganizationAccount.objects()
-  ```
-
-- **Filter by specific fields**:
-  ```python
-  it_orgs = OrganizationAccount.objects(companyIndustry=companyIndustry.IT)
-  ```
-
-- **Get a single document (by ID or unique field)**:
-  ```python
-  org = OrganizationAccount.objects.get(id="60d5ecb8...")
-  ```
-
-- **First record matching criteria**:
-  ```python
-  first_org = OrganizationAccount.objects(companyName="Skillio Tech").first()
-  ```
-
-## 3. Update
-You can update a document by modifying its attributes and saving, or by using the `.update()` method.
-
-- **Option A: Modify and Save**:
-  ```python
-  org = OrganizationAccount.objects.get(companyName="Skillio Tech")
-  org.companyEmail = "new-email@skillio.tech"
-  org.save()
-  ```
-
-- **Option B: Using `.update()` (Atomic)**:
-  ```python
-  OrganizationAccount.objects(companyName="Skillio Tech").update(set__accountStatus=False)
-  ```
-
-## 4. Delete
-To delete a document, call the `.delete()` method on a document instance or a queryset.
-
-- **Delete a single instance**:
-  ```python
-  org = OrganizationAccount.objects.get(id="60d5ecb8...")
-  org.delete()
-  ```
-
-- **Delete multiple documents**:
-  ```python
-  OrganizationAccount.objects(accountStatus=False).delete()
-  ```
-
-## 5. Working with Enums
-When using `EnumField`, you should pass the Enum member itself rather than the string value.
-
-```python
-from app.Model.enum.companySize import companySize
-
-# Correct
-org.companySize = companySize.LARGE
-
-# MongoEngine handles the conversion to the stored value automatically
-```
-
-## 6. Embedded Documents
-To work with embedded documents like `PlanInformation`, create the embedded instance and assign it to the parent field.
-
-```python
-from app.Model.OrganizationAccount import PlanInformation, OrganizationAccount
-import datetime
-
-plan = PlanInformation(
-    planID="plan_premium",
-    subscriptionStatus=True,
-    subStartedDate=datetime.datetime.now()
-)
-
-org = OrganizationAccount.objects.get(companyName="Skillio Tech")
-org.planInformation = plan
-org.save()
-```
 
 ## Running Tests
 To run all backend test cases, use `pytest` from the `skillio-backend` directory:

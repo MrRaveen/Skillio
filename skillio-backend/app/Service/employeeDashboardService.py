@@ -10,12 +10,14 @@ def performEmployeeLogin(email:str,password:str):
                 "status": "success",
                 "message": "Login successful",
                 "token": token,
+                "orgAccID": str(employee.companyAccID),
                 "employee": {
                     "id": str(employee.id),
                     "name": employee.employeeName,
                     "email": employee.email,
                     "roleID": employee.employeeRoleID,
-                    "deptID": employee.employeeDepartmentID
+                    "deptID": employee.employeeDepartmentID,
+                    "orgAccID": str(employee.companyAccID)
                 }
             }
         else:
@@ -101,7 +103,14 @@ def getAllTrainingData(employeeID: str):
                             articles=articles_res,
                             slides=slides_res,
                             evaluationQuestions=eval_qs_res,
-                            evaluationStatus=EvaluationStatusRes(totalQuestions=m.evaluationStatus.totalQuestions) if m.evaluationStatus else None
+                            evaluationStatus=EvaluationStatusRes(
+                                passedStatus=m.evaluationStatus.passedStatus,
+                                passLimit=m.evaluationStatus.passLimit,
+                                obtainedMarks=m.evaluationStatus.obtainedMarks,
+                                totalCorrectedCount=m.evaluationStatus.totalCorrectedCount,
+                                obtainedMarksPrecent=m.evaluationStatus.obtainedMarksPrecent,
+                                totalQuestions=m.evaluationStatus.totalQuestions
+                            ) if m.evaluationStatus else None
                         ))
 
                 # Handle the evaluation dict extraction safely
@@ -120,6 +129,7 @@ def getAllTrainingData(employeeID: str):
 
             newRes = TrainingRes(
                 id=str(train.id),
+                trainingContentID=train.trainingContentID or '',
                 growth=train.growth,
                 performanceIncrease=train.performanceIncrease,
                 trainingStatus=train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus),
@@ -232,3 +242,176 @@ def evaluationIntial(answers: submitSolutionsInitialReq,employeeID:str):
     except Exception as e:
         print(f"Error in evaluationIntial: {str(e)}")
         return {"status": "failed", "message": f"An error occurred: {str(e)}"}
+
+
+def calEvaluationModule(ansData: submitModuleAnswersReq):
+    try:
+        from app.Model.TrainingContent import TrainingContent, EvaluationStatus
+        content = TrainingContent.objects(id=ansData.trainingContentID).first()
+        
+        if not content:
+            return {"status": "error", "message": "Training content not found"}
+            
+        relaventModule = None
+        if ansData.moduleArrIndex < len(content.modules):
+            relaventModule = content.modules[ansData.moduleArrIndex]
+            
+        if not relaventModule:
+            return {"status": "error", "message": "Module not found"}
+            
+        incorrectCount = 0
+        correctCount = 0
+        evaluationQues = relaventModule.evaluationQuestions
+        totalQuestions = len(evaluationQues)
+        
+        for singleQObj in evaluationQues:
+            singleQuestion = singleQObj.questions
+            userAnswerList = ansData.answers
+            
+            userAns = None
+            for a in userAnswerList: 
+                if singleQuestion == a.questionStr:
+                    userAns = a.qAnsNum
+                    break
+                    
+            if userAns is not None:
+                singleQObj.userProvidedAnswer = userAns
+                if userAns == singleQObj.correctAnswer:
+                    correctCount += 1
+                    singleQObj.corretnessStatus = True
+                else:
+                    incorrectCount += 1
+                    singleQObj.corretnessStatus = False
+            else:
+                incorrectCount += 1
+                singleQObj.corretnessStatus = False
+                
+        limit = 60.0
+        obtainedMarks = 0.0
+        percent = 0.0
+        
+        if totalQuestions > 0:
+            markForEach = 100.0 / totalQuestions
+            obtainedMarks = markForEach * correctCount
+            percent = (correctCount / totalQuestions) * 100.0
+            
+        passStatus = True if percent >= limit else False
+        
+        relaventModule.evaluationStatus = EvaluationStatus(
+            passedStatus=passStatus,
+            passLimit=limit,
+            obtainedMarks=obtainedMarks,
+            totalCorrectedCount=correctCount,
+            obtainedMarksPrecent=percent,
+            totalQuestions=totalQuestions
+        )
+        
+        content.save()
+        
+        return {
+            "status": "success", 
+            "message": "Evaluation submitted successfully",
+            "data": {
+                "passedStatus": passStatus,
+                "obtainedMarks": obtainedMarks,
+                "obtainedMarksPrecent": percent,
+                "totalCorrectedCount": correctCount,
+                "totalQuestions": totalQuestions
+            }
+        }
+    except Exception as e:
+        print(f"Error in calEvaluationModule: {str(e)}")
+        return {"status": "error", "message": f"An error occurred: {str(e)}"}
+
+
+def finalEvalCal(trainingContID: str,trainingID: str):
+    try:
+        content = TrainingContent.objects(id=trainingContID).first()
+        trainingBase = Training.objects(id=trainingID).first()
+        if not content:
+            return {"status": "failed", "message": "Training content not found."}
+            
+        allModules = content.modules
+        passModuleLimitCount = len(allModules)
+        actualPassedModuleCount = 0
+        totMarks = 0.0
+        totCompleteMarks = 0.0
+        
+        for m in allModules:
+            if not m.evaluationStatus or not m.evaluationStatus.passedStatus:
+                return {"status": "failed", "message": "To pass the path, all the modules must be passed"}
+            
+            actualPassedModuleCount += 1
+            totMarks += (m.evaluationStatus.obtainedMarks or 0.0)
+            totCompleteMarks += 100.0
+                
+        totalMrksPercent = 0.0
+        if totCompleteMarks > 0:
+            totalMrksPercent = (totMarks / totCompleteMarks) * 100.0
+            
+        from app.Model.TrainingContent import TotalEvaluation
+        content.totalEvaluation = TotalEvaluation(
+            passModuleLimitCount=passModuleLimitCount,
+            actualPassedModuleCount=actualPassedModuleCount,
+            totalMarks=totMarks,
+            totalMrksPercent=totalMrksPercent
+        )
+        content.save()
+
+        #update the training status
+        if trainingBase:
+            from app.Model.enum.trainingStatus import trainingStatus
+            trainingBase.trainingStatus = trainingStatus.FINISHED
+            trainingBase.save()
+        
+        return {
+            "status": "success", 
+            "message": "Final evaluation calculated successfully.",
+            "data": {
+                "passModuleLimitCount": passModuleLimitCount,
+                "actualPassedModuleCount": actualPassedModuleCount,
+                "totalMarks": totMarks,
+                "totalMrksPercent": totalMrksPercent
+            }
+        }
+    except Exception as e:
+        print(f"Error in finalEvalCal: {str(e)}")
+        return {"status": "error", "message": f"An error occurred: {str(e)}"}
+
+
+def updateEmAccByID(data):
+    try:
+        from app.requests.updateEmProfReq import updateEmProfReq
+        foundEm = Employee.objects(id=data.emplpyeeDocID).first()
+        if foundEm:
+            if data.newEmployeeName is not None:
+                foundEm.employeeName = data.newEmployeeName
+            if data.password is not None:
+                foundEm.password = data.password
+            if data.newContact is not None:
+                foundEm.contactnumber = data.newContact
+            if data.newAddress is not None:
+                foundEm.address = data.newAddress
+            if data.newProfileImgUrl is not None:
+                foundEm.profileImageUrl = data.newProfileImgUrl
+                
+            foundEm.save()
+            return {
+                "status": "success",
+                "message": "Profile updated successfully",
+                "employee": {
+                    "id": str(foundEm.id),
+                    "name": foundEm.employeeName,
+                    "email": foundEm.email,
+                    "contactnumber": foundEm.contactnumber,
+                    "address": foundEm.address,
+                    "profileImageUrl": foundEm.profileImageUrl
+                }
+            }
+        else:
+            return {"status": "failed", "message": "Employee not found"}
+    except Exception as e:
+        print(f"Error in updateEmAccByID: {str(e)}")
+        return {"status": "error", "message": f"An error occurred: {str(e)}"}
+            
+

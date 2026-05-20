@@ -73,6 +73,11 @@ class SlideRes(BaseModel):
     voiceCovers: List[VoiceCoverRes]
 
 class EvaluationStatusRes(BaseModel):
+    passedStatus: Optional[bool] = None
+    passLimit: Optional[float] = None
+    obtainedMarks: Optional[float] = None
+    totalCorrectedCount: Optional[int] = None
+    obtainedMarksPrecent: Optional[float] = None
     totalQuestions: int
 
 class ModuleRes(BaseModel):
@@ -89,9 +94,11 @@ class TrainingContentRes(BaseModel):
     initialQuestions: List[QuestionRes] = []
     modules: List[ModuleRes] = []
     totalEvaluation: Optional[dict] = None
+    initialQuestionEvaluation: Optional[dict] = None
 
 class TrainingRes(BaseModel):
     id: str
+    trainingContentID: str
     growth: float
     performanceIncrease: float
     trainingStatus: str

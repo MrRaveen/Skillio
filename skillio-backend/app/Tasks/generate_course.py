@@ -16,6 +16,7 @@ from app.Model.enum.trainingStatus import trainingStatus
 from app.mocks.ml_mock import mock_score_predictor
 from app.Model.enum.proficiencyLevelInitialQuestions import proficiencyLevelInitialQuestions
 from app.routes.dispatcher import push_to_org
+from app.routes.dispatcherEm import push_to_em
 from gtts import gTTS
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda
@@ -488,7 +489,13 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
                     totalMrksPercent=None
                 )
             )
-        
+        #send notification
+        message = {
+            "status":"success",
+            "type":"AI",
+            "message":"Complete course is created"
+        }
+        push_to_em(employeeID,message)
         return {"status": "success", "contentID": contentID}
 
     except Exception as exc:
