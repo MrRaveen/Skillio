@@ -242,7 +242,7 @@ def evaluationIntial(answers: submitSolutionsInitialReq,employeeID:str):
     except Exception as e:
         print(f"Error in evaluationIntial: {str(e)}")
         return {"status": "failed", "message": f"An error occurred: {str(e)}"}
-
+from app.requests.submitModuleAnswersReq import submitModuleAnswersReq
 
 def calEvaluationModule(ansData: submitModuleAnswersReq):
     try:

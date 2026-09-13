@@ -171,6 +171,13 @@ redis-server
    ```
 2. Create and activate a Python virtual environment:
    ```bash
+   windows
+   
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1
+   
+   Linux
+
    python3 -m venv .venv
    source .venv/bin/activate
    ```
@@ -183,13 +190,20 @@ redis-server
    python run.py
    ```
    *The Flask API will run on `http://localhost:5000`.*
-
+### Step 2.1: run docker redis
+```bash
+docker run -d -p 6379:6379 --name redis redis:latest
+```
 ### Step 3: Run Celery Worker (Background AI Generation tasks)
 Open a new terminal tab, navigate to the backend directory, activate virtual environment, and run:
 ```bash
 cd skillio-backend
 source .venv/bin/activate
 celery -A celery_worker.celery_app worker --loglevel=info
+
+windows
+celery -A celery_worker.celery_app worker --loglevel=info --pool=solo
+
 ```
 
 ### Step 4: Stripe Webhook Forwarding

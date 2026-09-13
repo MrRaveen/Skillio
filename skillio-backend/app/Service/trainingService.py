@@ -69,7 +69,11 @@ def getAllTrainingData(orgID: str):
                         articles_res = [
                             ArticleRes(
                                 articleTitle=art.articleTitle,
-                                paragraphs=[ParagraphRes(paragraph=p.paragraph) for p in art.paragraphs]
+                                paragraphs=[ParagraphRes(
+                                    paragraph=p.paragraph,
+                                    mermaidCode=p.mermaid_diagram,
+                                    has_diagram=p.has_diagram if p.has_diagram is not None else False
+                                ) for p in art.paragraphs]
                             ) for art in m.articles
                         ] if m.articles else []
 

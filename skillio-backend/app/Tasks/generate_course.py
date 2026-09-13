@@ -1,3 +1,4 @@
+from typing import Optional, List, Dict
 import os
 import tempfile
 import re
@@ -9,6 +10,7 @@ from app.Model.TrainingContent import (
     Question, TrainingContent, Module, Article, Paragraph, 
     Slide, VoiceCover, EvaluationStatus, TotalEvaluation
 )
+from groq import RateLimitError, APIStatusError
 import json
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from app.Model.Training import Training
@@ -24,6 +26,22 @@ import cloudinary
 import cloudinary.uploader
 from mdtopptx import parse_markdown, create_ppt
 
+class Component(BaseModel):
+    name: str = Field(description="The component extracted as a single word.")
+    is_output: bool = Field(description="True if this component is generated as an output, False otherwise.")
+    has_connections: bool = Field(description="True if this component connects to any other component.")
+
+class Connection(BaseModel):
+    source_component: str = Field(description="The single-word name of the origin component.")
+    target_component: str = Field(description="The single-word name of the destination component.")
+    relationship: str = Field(description="The text-form description of how they interconnect.")
+
+class ParagraphAnalysis(BaseModel):
+    components: List[Component] = Field(description="List of all identified components in this specific paragraph.")
+    connections: List[Connection] = Field(description="List of all interconnections between components in this paragraph.")
+    needs_diagram: bool = Field(description="True ONLY if there is at least one connection between components in this paragraph.")
+    mermaid_code: Optional[str] = Field(description="Valid Mermaid.js graph code (e.g., graph TD). Generate ONLY if needs_diagram is True.")
+    
 class QuizQuestionSchema(BaseModel):
     # Minor tweak: changed 'questions' to 'question' for better JSON semantics, but either works.
     question: str = Field(
@@ -93,13 +111,33 @@ class ModuleEvaluationSchema(BaseModel):
         description="A list of exactly 10 multiple-choice questions for the module."
     )
 
+def invoke_with_fallback(chain_builder, prompt_args, max_tokens, model_name, initial_llm, step_name="AI Task"):
+    fallback_keys_str = os.getenv('FALLBACK_GROQ_KEYS', '')
+    apiTokens = [k.strip() for k in fallback_keys_str.split(',')] if fallback_keys_str else []
+    count = 0
+    current_llm = initial_llm
+    while True:
+        try:
+            chain = chain_builder(current_llm)
+            return chain.invoke(prompt_args)
+        except Exception as e:
+            print(f"[{step_name}] Exception occurred: {repr(e)}", flush=True)
+            if isinstance(e, (RateLimitError, APIStatusError)):
+                if count < len(apiTokens) and apiTokens[count]:
+                    print(f"[{step_name}] Retrying with fallback token {count+1}...", flush=True)
+                    current_llm = ChatGroq(temperature=0.2, max_tokens=max_tokens, model_name=model_name, api_key=apiTokens[count], max_retries=5)
+                    count += 1
+                    continue
+            raise e
+
 @shared_task(bind=True)
 def generate_initial_questions(self, target_skills: list[str], role: str,employeeID: str, organizationID:str):
     try:
         # 1. Use local variables instead of 'self.llm'
         api_key = os.getenv('GROQ_KEY')
-        model_name = os.getenv('GROQ_MODEL', "qwen/qwen3-32b")
-        llm = ChatGroq(temperature=0.2,max_tokens=4096, model_name=model_name, api_key=api_key,max_retries=5)
+        model_name = os.getenv('GROQ_MODEL')
+        max_tokens = os.getenv('MAX_TOKENS')
+        llm = ChatGroq(temperature=0.2,max_tokens=max_tokens, model_name=model_name, api_key=api_key,max_retries=5)
 
         
         # 2. Refined prompt for clarity
@@ -107,13 +145,15 @@ def generate_initial_questions(self, target_skills: list[str], role: str,employe
             "Create 5 diagnostic multiple-choice questions for these skills: {target_skills}. The target employee role is: {role}."
         )
         
-        initial_questions_chain = create_initial_questions_prompt | llm.with_structured_output(EvaluationTestSchema)
-        
         #Create the test
-        generated_test = initial_questions_chain.invoke({
-            "target_skills": ", ".join(target_skills), 
-            "role": role
-        })
+        generated_test = invoke_with_fallback(
+            lambda _llm: create_initial_questions_prompt | _llm.with_structured_output(EvaluationTestSchema),
+            {
+                "target_skills": ", ".join(target_skills), 
+                "role": role
+            },
+            max_tokens, model_name, llm, step_name="Initial Questions"
+        )
         #access the created initial data
         all_questions = generated_test.test_questions
         #data saving part
@@ -176,8 +216,9 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             proficiencyLevel = proficiencyLevelInitialQuestions(proficiencyLevel)
             
         api_key = os.getenv('GROQ_KEY')
-        model_name = os.getenv('GROQ_MODEL', "qwen/qwen3-32b")
-        llm = ChatGroq(temperature=0.2,max_tokens=4096, model_name=model_name, api_key=api_key,max_retries=5)
+        model_name = os.getenv('GROQ_MODEL')
+        max_tokens = os.getenv('MAX_TOKENS')
+        llm = ChatGroq(temperature=0.2,max_tokens=max_tokens, model_name=model_name, api_key=api_key,max_retries=5)
 
         # create the outline + module outlines
         create_base_course_outline = ChatPromptTemplate.from_template(
@@ -187,12 +228,15 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             "Provide a course title, a brief overview, and an outline of exactly 2 modules."
         )
 
-        course_chain = create_base_course_outline | llm.with_structured_output(CourseOutlineSchema)
-        generated_course = course_chain.invoke({
-            "target_skills": ", ".join(target_skills),
-            "role": role,
-            "proficiency_level": proficiencyLevel.value
-        })
+        generated_course = invoke_with_fallback(
+            lambda _llm: create_base_course_outline | _llm.with_structured_output(CourseOutlineSchema),
+            {
+                "target_skills": ", ".join(target_skills),
+                "role": role,
+                "proficiency_level": proficiencyLevel.value
+            },
+            max_tokens, model_name, llm, step_name="Course Outline"
+        )
         # create the articles for each modules
         # create_article_prompt = ChatPromptTemplate.from_template(
         #     "You are an expert technical writer. Create detailed educational articles for a training module.\n"
@@ -296,12 +340,16 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             #     db_articles.append(Article(articleTitle=art.articleTitle, paragraphs=db_paragraphs))
 
             # 1. Generate RAW text from the LLM (No LangChain parsers)
-            raw_text = (create_article_prompt | llm | StrOutputParser()).invoke({
-                "module_name": module.name,
-                "module_description": module.description,
-                "proficiency_level": proficiencyLevel.value,
-                "format_instructions": article_parser.get_format_instructions()
-            })
+            raw_text = invoke_with_fallback(
+                lambda _llm: create_article_prompt | _llm | StrOutputParser(),
+                {
+                    "module_name": module.name,
+                    "module_description": module.description,
+                    "proficiency_level": proficiencyLevel.value,
+                    "format_instructions": article_parser.get_format_instructions()
+                },
+                max_tokens, model_name, llm, step_name="Article Generation"
+            )
 
             # 2. Clean the <think> blocks
             cleaned_text = re.sub(r'<think>.*?</think>', '', raw_text, flags=re.DOTALL).strip()
@@ -326,11 +374,91 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             # 6. Convert back to Pydantic model
             generated_articles_data = allArticles(**raw_articles_dict)
 
-            # Prepare Articles for DB (Leave exactly as is)
+            #check whether there is a need to create graphs or an illustration for each articles: check whether there are any components that are mentioned as a set of output without any interconnection, set of output with a set of interconnection or just components which are not an outputs
+            #in the generated article which may have an interconnection between those components alongside with a common characteristics amoung them. 
+            #if yes --> get those components as single words, get the interconnection (or not), get the output status of those objects (outputs of not)
+            # create the mermaid code if only, any form of objects (output or not) with an interconnection. 
+            # #match each object word agaist the other words and get the interconnection at text form. 
+            # #then create the mermaid code with those data.  
+            # 2. Define the exact system prompt instructing the algorithm
+            system_instructions = \
+"""You are a technical extraction system. Analyze the provided paragraph from the article.
+Follow this exact algorithm for THIS PARAGRAPH ONLY:
+1. Identify components (outputs or non-outputs) mentioned in the text. Extract them as single words.
+2. Determine if these components have interconnections or common characteristics within this specific paragraph.
+3. Classify each component's output status (True/False).
+4. Match each component against others to map interconnections in text form (source, target, relationship).
+5. If ANY interconnections exist, set needs_diagram to True and generate valid Mermaid.js flowchart code using the extracted connections.
+
+You MUST respond with ONLY a raw JSON object. Do NOT use markdown code fences. Do NOT add any explanation.
+The JSON must follow this exact schema:
+{{
+  "components": [{{"name": "string", "is_output": true, "has_connections": true}}],
+  "connections": [{{"source_component": "string", "target_component": "string", "relationship": "string"}}],
+  "needs_diagram": true,
+  "mermaid_code": "string or null"
+}}"""
+
+
+            paragraph_eval_prompt = ChatPromptTemplate.from_messages([
+                ("system", system_instructions),
+                ("human", "Article Title: {articleTitle}\n\nParagraph Content:\n{paragraph}")
+            ])
+
+            # Use StrOutputParser to avoid Groq tool-use mode which fails on large outputs
+            paragraph_eval_chain = paragraph_eval_prompt | llm | StrOutputParser()
+
             db_articles = []
+
+            # 4. Execute the flow paragraph by paragraph
             for art in generated_articles_data.articles:
-                db_paragraphs = [Paragraph(paragraph=p) for p in art.paragraphs]
-                db_articles.append(Article(articleTitle=art.articleTitle, paragraphs=db_paragraphs))
+                db_paragraphs = []
+                
+                # Iterate through each paragraph individually
+                for p_text in art.paragraphs:
+                    
+                    # Invoke the chain and get raw text (avoids Groq tool-call JSON size limits)
+                    raw_eval_text = invoke_with_fallback(
+                        lambda _llm: paragraph_eval_prompt | _llm | StrOutputParser(),
+                        {
+                            "articleTitle": art.articleTitle,
+                            "paragraph": p_text
+                        },
+                        max_tokens, model_name, llm, step_name="Paragraph Analysis"
+                    )
+
+                    # Clean <think> blocks and markdown fences
+                    raw_eval_text = re.sub(r'<think>.*?</think>', '', raw_eval_text, flags=re.DOTALL).strip()
+                    if "```" in raw_eval_text:
+                        m = re.search(r'```(?:json)?(.*?)```', raw_eval_text, flags=re.DOTALL)
+                        if m:
+                            raw_eval_text = m.group(1).strip()
+
+                    # Parse JSON manually into ParagraphAnalysis
+                    try:
+                        eval_dict = json.loads(raw_eval_text)
+                        evalData = ParagraphAnalysis(**eval_dict)
+                    except Exception as parse_err:
+                        print(f"[Paragraph Analysis] JSON parse failed: {repr(parse_err)} | Raw: {raw_eval_text[:300]}", flush=True)
+                        # Fallback: store the paragraph with no diagram
+                        evalData = ParagraphAnalysis(
+                            components=[], connections=[],
+                            needs_diagram=False, mermaid_code=None
+                        )
+                    
+                    db_paragraphs.append(Paragraph(
+                        paragraph=p_text,
+                        components=[comp.model_dump() for comp in evalData.components],
+                        connections=[conn.model_dump() for conn in evalData.connections],
+                        has_diagram=evalData.needs_diagram,
+                        mermaid_diagram=evalData.mermaid_code if evalData.needs_diagram else None
+                    ))
+                    
+                # Append the fully processed article to the database list
+                db_articles.append(Article(
+                    articleTitle=art.articleTitle, 
+                    paragraphs=db_paragraphs
+                ))
 
 
             # Prepare Articles for DB
@@ -347,17 +475,25 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             #     db_articles.append(Article(articleTitle=art.articleTitle, paragraphs=db_paragraphs))
 
             # invoke the slides creator chain
-            generated_markdown_string = slides_md_chain.invoke({
-                "module_name": module.name,
-                "module_description": module.description,
-                "proficiency_level": proficiencyLevel.value
-            })
+            generated_markdown_string = invoke_with_fallback(
+                lambda _llm: create_slides_md_prompt | _llm | string_parser,
+                {
+                    "module_name": module.name,
+                    "module_description": module.description,
+                    "proficiency_level": proficiencyLevel.value
+                },
+                max_tokens, model_name, llm, step_name="Slides Generation"
+            )
             # invoke the evaluation questions
-            eval_data = module_eval_chain.invoke({
-                "module_name": module.name,
-                "module_description": module.description,
-                "proficiency_level": proficiencyLevel.value
-            })
+            eval_data = invoke_with_fallback(
+                lambda _llm: create_module_eval_prompt | _llm.with_structured_output(ModuleEvaluationSchema),
+                {
+                    "module_name": module.name,
+                    "module_description": module.description,
+                    "proficiency_level": proficiencyLevel.value
+                },
+                max_tokens, model_name, llm, step_name="Module Evaluation"
+            )
             db_evaluation_questions = []
             for q in eval_data.evaluationQuestions:
                 new_db_question = Question(

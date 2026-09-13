@@ -1,3 +1,4 @@
+from typing import Optional
 from app import db
 
 class Question(db.EmbeddedDocument):
@@ -15,6 +16,10 @@ class InitialQuestionEvaluation(db.EmbeddedDocument):
 
 class Paragraph(db.EmbeddedDocument):
     paragraph = db.StringField()
+    components = db.ListField(db.DictField())
+    connections = db.ListField(db.DictField())
+    has_diagram = db.BooleanField(default=False)
+    mermaid_diagram = db.StringField()
 
 class Article(db.EmbeddedDocument):
     articleTitle = db.StringField()

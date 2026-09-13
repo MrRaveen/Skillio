@@ -57,6 +57,8 @@ class QuestionRes(BaseModel):
 
 class ParagraphRes(BaseModel):
     paragraph: str
+    mermaidCode: Optional[str] = None
+    has_diagram: bool = False
 
 class ArticleRes(BaseModel):
     articleTitle: str

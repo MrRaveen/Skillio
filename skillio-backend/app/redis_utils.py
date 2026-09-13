@@ -10,7 +10,7 @@ def getRedisClient():
             host='localhost', 
             port=6379, 
             db=0, 
-            decode_responses=True # Crucial: This returns strings instead of bytes
+            decode_responses=True
             )
         return redisClient
     except Exception as e:
