@@ -93,7 +93,7 @@ def getAllTrainingData(employeeID: str):
                 module_res_list = []
                 if content_obj.modules:
                     for m in content_obj.modules:
-                        articles_res = [ArticleRes(articleTitle=art.articleTitle, paragraphs=[ParagraphRes(paragraph=p.paragraph) for p in art.paragraphs]) for art in m.articles]
+                        articles_res = [ArticleRes(articleTitle=art.articleTitle, paragraphs=[ParagraphRes(paragraph=p.paragraph,has_diagram=p.has_diagram,mermaidCode=p.mermaid_diagram) for p in art.paragraphs]) for art in m.articles]
                         slides_res = [SlideRes(slideName=s.slideName, slideLink=s.slideLink, totSlideCount=s.totSlideCount, voiceCovers=[VoiceCoverRes(slideNumber=vc.slideNumber, voiceFileLink=vc.voiceFileLink) for vc in s.voiceCovers]) for s in m.slides]
                         eval_qs_res = [QuestionRes(questions=eq.questions, answerChoices=eq.answerChoices, correctAnswer=eq.correctAnswer) for eq in m.evaluationQuestions]
 

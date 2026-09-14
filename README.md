@@ -206,6 +206,11 @@ celery -A celery_worker.celery_app worker --loglevel=info --pool=solo
 
 ```
 
+### Step 3.1: reset the worker
+```bash
+celery -A celery_worker.celery_app purge
+```
+
 ### Step 4: Stripe Webhook Forwarding
 Open a new terminal tab and start forwarding Stripe webhook events:
 ```bash
