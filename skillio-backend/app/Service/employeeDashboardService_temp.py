@@ -1,3 +1,4 @@
+from app.requests import submitSolutionsInitialReq
 def evaluationIntial(answers: submitSolutionsInitialReq,employeeID:str):
     try:
         from app.Model.TrainingContent import InitialQuestionEvaluation

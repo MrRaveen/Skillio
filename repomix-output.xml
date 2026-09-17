@@ -83,6 +83,7 @@ skillio-backend/app/Model/enum/proficiencyLevelInitialQuestions.py
 skillio-backend/app/Model/enum/trainingStatus.py
 skillio-backend/app/Model/OrganizationAccount.py
 skillio-backend/app/Model/Plan.py
+skillio-backend/app/Model/repomix-output.xml
 skillio-backend/app/Model/Training.py
 skillio-backend/app/Model/TrainingContent.py
 skillio-backend/app/redis_utils.py
@@ -121,10 +122,12 @@ skillio-backend/app/Service/stripeServices.py
 skillio-backend/app/Service/trainingService.py
 skillio-backend/app/Tasks/generate_course.py
 skillio-backend/celery_worker.py
+skillio-backend/docs/er-diagram.drawio
 skillio-backend/image.png
 skillio-backend/pytest.ini
 skillio-backend/requirements.txt
 skillio-backend/run.py
+skillio-backend/test_eval.py
 skillio-backend/tests/conftest.py
 skillio-backend/tests/fullWorkFlowTests/test_loginRoutes.py
 skillio-frontend/.gitignore
@@ -182,6 +185,414 @@ test.py
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="skillio-backend/app/Model/repomix-output.xml">
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+DefinedSkill.py
+Department.py
+Employee.py
+EmployeeRole.py
+EmployeeTeam.py
+enum/companyIndustry.py
+enum/companySize.py
+enum/employeeRole.py
+enum/proficiencyLevelInitialQuestions.py
+enum/trainingStatus.py
+OrganizationAccount.py
+Plan.py
+Training.py
+TrainingContent.py
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="DefinedSkill.py">
+from app import db
+
+class DefinedSkill(db.Document):
+    meta = {'collection': 'definedSkills'}
+
+    skill_name = db.StringField()
+    skill_des = db.StringField()
+    companyAccID = db.StringField()
+</file>
+
+<file path="Department.py">
+from app import db
+
+class Department(db.Document):
+    meta = {'collection': 'departments'}
+
+    deptName = db.StringField()
+    deptDescription = db.StringField()
+    companyAccID = db.StringField()
+</file>
+
+<file path="Employee.py">
+from app import db
+import datetime
+
+class Employee(db.Document):
+    meta = {'collection': 'employees'}
+
+    companyAccID = db.StringField()
+    employeeName = db.StringField()
+    employeeRoleID = db.StringField()
+    employeeDepartmentID = db.StringField()
+    teamID = db.StringField()
+    email = db.EmailField()
+    password = db.StringField()
+    contactnumber = db.StringField()
+    address = db.StringField()
+    profileImageUrl = db.StringField()
+</file>
+
+<file path="EmployeeRole.py">
+from app import db
+
+SKILL_LEVEL_CHOICES = ('low', 'medium', 'high', 'expert')
+
+class EmployeeRole(db.Document):
+    meta = {'collection': 'employeeRoles'}
+
+    roleName = db.StringField()
+    roleDescription = db.StringField()
+    roleSkillid = db.ListField(db.StringField())
+    skillLevel = db.StringField(choices=SKILL_LEVEL_CHOICES)
+    companyAccID = db.StringField()
+</file>
+
+<file path="EmployeeTeam.py">
+from app import db
+
+class EmployeeTeam(db.Document):
+    meta = {'collection': 'employeeTeams'}
+
+    teamName = db.StringField()
+    teamDes = db.StringField()
+    departmentID = db.StringField()
+    companyAccID = db.StringField()
+</file>
+
+<file path="enum/companyIndustry.py">
+import enum
+
+class companyIndustry(enum.Enum):
+    EDUCATION="Education"
+    MEDICAL="Medical"
+    IT="IT"
+    ENGINEERING="Engineering"
+</file>
+
+<file path="enum/companySize.py">
+import enum
+
+class companySize(enum.Enum):
+    SMALL="0-10"
+    MEDIUM="10-50"
+    HIGH="50-200"
+    VERY_HIGH="201+"
+</file>
+
+<file path="enum/employeeRole.py">
+import enum
+
+class employeeRole(enum.Enum):
+    MANAGER="Manager"
+    NORMAL="Normal"
+    DEVOPS="DevOps"
+    TECH_LEAD="Tech Lead"
+</file>
+
+<file path="enum/proficiencyLevelInitialQuestions.py">
+import enum
+
+class proficiencyLevelInitialQuestions(enum.Enum):
+    LOW="Low"
+    MEDIUM="Medium"
+    HIGH="High"
+</file>
+
+<file path="enum/trainingStatus.py">
+import enum
+
+class trainingStatus(enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    FINISHED = "finished"
+</file>
+
+<file path="OrganizationAccount.py">
+from app import db
+import datetime
+from app.Model.enum.companySize import companySize
+from app.Model.enum.companyIndustry import companyIndustry
+
+class PlanInformation(db.EmbeddedDocument):
+    planID = db.StringField()
+    subStartedDate = db.DateTimeField()
+
+class PaymentInformation(db.EmbeddedDocument):
+    planIDInternal = db.StringField()
+    stripe_customer_id = db.StringField()
+    stripe_subscription_id = db.StringField()
+    stripe_price_id = db.StringField()
+    stripe_subscription_status = db.StringField()
+    current_period_end = db.DateTimeField()
+    current_period_start = db.DateTimeField()
+
+class OrganizationAccount(db.Document):
+    meta = {'collection': 'organizationAccounts'}
+
+    accountStatus = db.BooleanField()
+    companyName = db.StringField()
+    companySize = db.EnumField(companySize)
+    companyIndustry = db.EnumField(companyIndustry)
+    companyEmail = db.EmailField()
+    contactNumber = db.StringField()
+    ownerEmail = db.EmailField()
+    personalNumber = db.StringField()
+    password = db.StringField()
+    address = db.StringField()
+    city = db.StringField()
+    state = db.StringField()
+    zipCode = db.StringField()
+    country = db.StringField()
+    companyWebsiteUrl = db.StringField()
+    companyLogoUrl = db.StringField()
+    companyBannerUrl = db.StringField()
+    planInformation = db.EmbeddedDocumentField(PlanInformation)
+    paymentInfo = db.EmbeddedDocumentField(PaymentInformation)
+</file>
+
+<file path="Plan.py">
+from app import db
+import datetime
+
+class Plan(db.Document):
+    meta = {'collection': 'plans'}
+    stripePriceID = db.StringField()
+    name = db.StringField()
+    description = db.StringField()
+    priceMonth = db.FloatField()
+    priceYear = db.FloatField()
+    features = db.ListField(db.StringField())
+    isPopular = db.BooleanField(default=False)
+</file>
+
+<file path="Training.py">
+from app import db
+from app.Model.enum.trainingStatus import trainingStatus
+
+class Training(db.Document):
+    meta = {'collection': 'training'}
+
+    employeeID = db.StringField()
+    growth = db.FloatField()#how much a difference made in terms of total percentage compared to previous training
+    performanceIncrease = db.FloatField()#performance increase when compared to past training
+    trainingStatus = db.EnumField(trainingStatus)
+    trainingContentID = db.StringField()
+    trainingPassStatus = db.BooleanField()
+    extractedNewSkillsInModeule = db.ListField(db.StringField())
+    predictedFinalScore = db.FloatField()
+
+    organizationID = db.StringField()
+</file>
+
+<file path="TrainingContent.py">
+from typing import Optional
+from app import db
+
+class Question(db.EmbeddedDocument):
+    questions = db.StringField()
+    answerChoices = db.ListField(db.StringField())
+    corretnessStatus = db.BooleanField()
+    userProvidedAnswer = db.IntField()
+    correctAnswer = db.IntField()
+
+class InitialQuestionEvaluation(db.EmbeddedDocument):
+    initialQuestionMarks = db.FloatField()
+    initialQuestionMarksPercent = db.FloatField()
+    totalQuestions = db.IntField()
+    correctedCount = db.IntField()
+
+class Paragraph(db.EmbeddedDocument):
+    paragraph = db.StringField()
+    components = db.ListField(db.DictField())
+    connections = db.ListField(db.DictField())
+    has_diagram = db.BooleanField(default=False)
+    mermaid_diagram = db.StringField()
+
+class Article(db.EmbeddedDocument):
+    articleTitle = db.StringField()
+    paragraphs = db.ListField(db.EmbeddedDocumentField(Paragraph))
+
+class VoiceCover(db.EmbeddedDocument):
+    slideNumber = db.StringField()
+    voiceFileLink = db.StringField()
+
+class Slide(db.EmbeddedDocument):
+    slideName = db.StringField()
+    slideLink = db.StringField()
+    totSlideCount = db.IntField()
+    voiceCovers = db.ListField(db.EmbeddedDocumentField(VoiceCover))
+
+class EvaluationStatus(db.EmbeddedDocument):
+    passedStatus = db.BooleanField()
+    passLimit = db.FloatField()
+    obtainedMarks = db.FloatField()
+    totalCorrectedCount = db.IntField()
+    obtainedMarksPrecent = db.FloatField()
+    totalQuestions = db.IntField()
+
+class Module(db.EmbeddedDocument):
+    moduleTitle = db.StringField()
+    moduleDescription = db.StringField()
+    articles = db.ListField(db.EmbeddedDocumentField(Article))
+    slides = db.ListField(db.EmbeddedDocumentField(Slide))
+    evaluationQuestions = db.ListField(db.EmbeddedDocumentField(Question))
+    evaluationStatus = db.EmbeddedDocumentField(EvaluationStatus)
+
+class TotalEvaluation(db.EmbeddedDocument):
+    passModuleLimitCount = db.IntField()
+    actualPassedModuleCount = db.IntField()
+    totalMarks = db.FloatField()
+    totalMrksPercent = db.FloatField()
+
+class TrainingContent(db.Document):
+    meta = {'collection': 'trainingContent'}
+
+    title = db.StringField()
+    overview = db.StringField()
+    initialQuestions = db.ListField(db.EmbeddedDocumentField(Question))
+    initialQuestionEvaluation = db.EmbeddedDocumentField(InitialQuestionEvaluation)
+    modules = db.ListField(db.EmbeddedDocumentField(Module))
+    totalEvaluation = db.EmbeddedDocumentField(TotalEvaluation)
+    companyAccID = db.StringField()
+
+"""sumary_line
+{
+  "title":"str",
+  "overview":"str",
+  "initialQuestions":[
+    {
+      "questions":"str",
+      "answerChoices":"string arr",
+      "corretnessStatus":"bool",
+      "userProvidedAnswer":"int",
+      "correctAnswer":"int"
+    }
+  ],
+  "initialQuestionEvaluation":{
+    "initialQuestionMarks":"double",
+    "initialQuestionMarksPercent":"double",
+    "totalQuestions":"int",
+    "correctedCount":"int"
+  },
+  "modules":[
+    {
+      "moduleTitle":"str",
+      "moduleDescription":"str",
+      "articles":[
+        {
+          "articleTitle":"str",
+          "paragraphs":[
+            {
+              "paragraph":"str"
+            }
+          ]
+        }
+      ],
+      "slides":[
+        {
+          "slideName":"str",
+          "slideLink":"str",
+          "totSlideCount":"int",
+          "voiceCovers":[
+            {
+              "slideNumber":"str",
+              "voiceFileLink":"str"
+            }
+          ]
+        }
+      ],
+      "evaluationQuestions":[
+        {
+          "questions":"str",
+          "answerChoices":"string arr",
+          "corretnessStatus":"bool",
+          "userProvidedAnswer":"int",
+          "correctAnswer":"int"
+        }
+      ],
+      "evaluationStatus":{
+        "passedStatus":"bool",
+        "passLimit":"double",
+        "obtainedMarks":"double",
+        "totalCorrectedCount":"int",
+        "obtainedMarksPrecent":"double",
+        "totalQuestions":"int"
+      }
+    }
+  ],
+  "totalEvaluation":{
+    "passModuleLimitCount":"int",
+    "actualPassedModuleCount":"int",
+    "totalMarks":"double",
+    "totalMrksPercent":"double"
+  }
+}
+"""
+</file>
+
+</files>
+</file>
+
+<file path="skillio-backend/docs/er-diagram.drawio">
+
+</file>
 
 <file path="skillio-frontend/.gitignore">
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
@@ -5513,7 +5924,8 @@ export default function EmployeesTab() {
 
 <file path="skillio-frontend/app/Dashboard/DashboardComponent/LearningPathTab.tsx">
 import { Card, Button, Badge } from "@/app/Components/Ui/Components";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import mermaid from "mermaid";
 import { createPortal } from "react-dom";
 import { apiCall } from "@/app/lib/api";
 import {
@@ -5534,7 +5946,9 @@ import {
   Eye,
   X,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Download,
+  Maximize2
 } from "lucide-react";
 
 // --- Interfaces ---
@@ -5548,7 +5962,110 @@ interface Question {
 
 interface Paragraph {
   paragraph: string;
+  has_diagram?: boolean;
+  mermaidCode?: string;
 }
+
+
+// --- Diagram Lightbox (full-screen enlarge overlay) ---
+const DiagramLightbox = ({ chart, onClose }: { chart: string; onClose: () => void }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    if (ref.current && chart) {
+      mermaid.render(`mermaid-lb-${Math.random().toString(36).substr(2, 9)}`, chart)
+        .then(({ svg }) => { if (ref.current) ref.current.innerHTML = svg; })
+        .catch(err => console.error('Mermaid lightbox error:', err));
+    }
+  }, [chart]);
+  // close on backdrop click
+  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={handleBackdrop}
+    >
+      <div className="relative bg-white rounded-3xl shadow-2xl p-8 m-8 max-w-5xl w-full max-h-[90vh] overflow-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 h-9 w-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
+          title="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div ref={ref} className="flex justify-center [&_svg]:max-w-full [&_svg]:h-auto" />
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// --- Enhanced Mermaid Diagram with Download + Enlarge ---
+const MermaidDiagram = ({ chart }: { chart: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [enlarged, setEnlarged] = useState(false);
+
+  useEffect(() => {
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    if (ref.current && chart) {
+      mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart)
+        .then(({ svg }) => { if (ref.current) ref.current.innerHTML = svg; })
+        .catch(err => console.error('Mermaid render error:', err));
+    }
+  }, [chart]);
+
+  const handleDownload = () => {
+    const svgEl = ref.current?.querySelector('svg');
+    if (!svgEl) return;
+    const svgData = new XMLSerializer().serializeToString(svgEl);
+    const canvas = document.createElement('canvas');
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    img.onload = () => {
+      canvas.width = img.width || 1200;
+      canvas.height = img.height || 800;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      const link = document.createElement('a');
+      link.download = 'diagram.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    img.src = url;
+  };
+
+  return (
+    <>
+      {enlarged && <DiagramLightbox chart={chart} onClose={() => setEnlarged(false)} />}
+      <div className="relative my-6 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden group">
+        {/* Action buttons — visible on hover */}
+        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <button
+            onClick={() => setEnlarged(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 shadow-sm transition-all"
+            title="Enlarge diagram"
+          >
+            <Maximize2 className="h-3.5 w-3.5" /> Enlarge
+          </button>
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 shadow-sm transition-all"
+            title="Download as PNG"
+          >
+            <Download className="h-3.5 w-3.5" /> Download
+          </button>
+        </div>
+        <div ref={ref} className="flex justify-center overflow-x-auto p-6 [&_svg]:max-w-full [&_svg]:h-auto" />
+      </div>
+    </>
+  );
+};
 
 interface Article {
   articleTitle: string;
@@ -6215,8 +6732,8 @@ function ModuleViewer({
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
-      <Card className="w-full max-w-5xl h-[90vh] flex flex-col shadow-[0_20px_70px_rgba(0,0,0,0.3)] bg-white relative rounded-[2rem] overflow-hidden border-0">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
+      <Card className="w-full h-screen flex flex-col shadow-[0_20px_70px_rgba(0,0,0,0.3)] bg-white relative rounded-none overflow-hidden border-0">
 
         {/* Modal Header */}
         <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white shrink-0 gap-6">
@@ -6288,9 +6805,14 @@ function ModuleViewer({
                       </div>
                       <div className="space-y-4">
                         {art.paragraphs?.map((p, pIdx) => (
-                          <p key={pIdx} className="text-base text-slate-600 leading-relaxed">
-                            {p.paragraph}
-                          </p>
+                          <div key={pIdx}>
+                            <p className="text-base text-slate-600 leading-relaxed">
+                              {p.paragraph}
+                            </p>
+                            {p.has_diagram && p.mermaidCode && (
+                              <MermaidDiagram chart={p.mermaidCode} />
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -10981,6 +11503,7 @@ export default nextConfig;
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.554.0",
+    "mermaid": "^12.0.0",
     "mongodb": "^7.0.0",
     "next": "16.0.3",
     "react": "19.2.0",
@@ -11938,167 +12461,6 @@ class OrganizationAccount(db.Document):
     paymentInfo = db.EmbeddedDocumentField(PaymentInformation)
 </file>
 
-<file path="skillio-backend/app/Model/TrainingContent.py">
-from app import db
-
-class Question(db.EmbeddedDocument):
-    questions = db.StringField()
-    answerChoices = db.ListField(db.StringField())
-    corretnessStatus = db.BooleanField()
-    userProvidedAnswer = db.IntField()
-    correctAnswer = db.IntField()
-
-class InitialQuestionEvaluation(db.EmbeddedDocument):
-    initialQuestionMarks = db.FloatField()
-    initialQuestionMarksPercent = db.FloatField()
-    totalQuestions = db.IntField()
-    correctedCount = db.IntField()
-
-class Paragraph(db.EmbeddedDocument):
-    paragraph = db.StringField()
-
-class Article(db.EmbeddedDocument):
-    articleTitle = db.StringField()
-    paragraphs = db.ListField(db.EmbeddedDocumentField(Paragraph))
-
-class VoiceCover(db.EmbeddedDocument):
-    slideNumber = db.StringField()
-    voiceFileLink = db.StringField()
-
-class Slide(db.EmbeddedDocument):
-    slideName = db.StringField()
-    slideLink = db.StringField()
-    totSlideCount = db.IntField()
-    voiceCovers = db.ListField(db.EmbeddedDocumentField(VoiceCover))
-
-class EvaluationStatus(db.EmbeddedDocument):
-    passedStatus = db.BooleanField()
-    passLimit = db.FloatField()
-    obtainedMarks = db.FloatField()
-    totalCorrectedCount = db.IntField()
-    obtainedMarksPrecent = db.FloatField()
-    totalQuestions = db.IntField()
-
-class Module(db.EmbeddedDocument):
-    moduleTitle = db.StringField()
-    moduleDescription = db.StringField()
-    articles = db.ListField(db.EmbeddedDocumentField(Article))
-    slides = db.ListField(db.EmbeddedDocumentField(Slide))
-    evaluationQuestions = db.ListField(db.EmbeddedDocumentField(Question))
-    evaluationStatus = db.EmbeddedDocumentField(EvaluationStatus)
-
-class TotalEvaluation(db.EmbeddedDocument):
-    passModuleLimitCount = db.IntField()
-    actualPassedModuleCount = db.IntField()
-    totalMarks = db.FloatField()
-    totalMrksPercent = db.FloatField()
-
-class TrainingContent(db.Document):
-    meta = {'collection': 'trainingContent'}
-
-    title = db.StringField()
-    overview = db.StringField()
-    initialQuestions = db.ListField(db.EmbeddedDocumentField(Question))
-    initialQuestionEvaluation = db.EmbeddedDocumentField(InitialQuestionEvaluation)
-    modules = db.ListField(db.EmbeddedDocumentField(Module))
-    totalEvaluation = db.EmbeddedDocumentField(TotalEvaluation)
-    companyAccID = db.StringField()
-
-"""sumary_line
-{
-  "title":"str",
-  "overview":"str",
-  "initialQuestions":[
-    {
-      "questions":"str",
-      "answerChoices":"string arr",
-      "corretnessStatus":"bool",
-      "userProvidedAnswer":"int",
-      "correctAnswer":"int"
-    }
-  ],
-  "initialQuestionEvaluation":{
-    "initialQuestionMarks":"double",
-    "initialQuestionMarksPercent":"double",
-    "totalQuestions":"int",
-    "correctedCount":"int"
-  },
-  "modules":[
-    {
-      "moduleTitle":"str",
-      "moduleDescription":"str",
-      "articles":[
-        {
-          "articleTitle":"str",
-          "paragraphs":[
-            {
-              "paragraph":"str"
-            }
-          ]
-        }
-      ],
-      "slides":[
-        {
-          "slideName":"str",
-          "slideLink":"str",
-          "totSlideCount":"int",
-          "voiceCovers":[
-            {
-              "slideNumber":"str",
-              "voiceFileLink":"str"
-            }
-          ]
-        }
-      ],
-      "evaluationQuestions":[
-        {
-          "questions":"str",
-          "answerChoices":"string arr",
-          "corretnessStatus":"bool",
-          "userProvidedAnswer":"int",
-          "correctAnswer":"int"
-        }
-      ],
-      "evaluationStatus":{
-        "passedStatus":"bool",
-        "passLimit":"double",
-        "obtainedMarks":"double",
-        "totalCorrectedCount":"int",
-        "obtainedMarksPrecent":"double",
-        "totalQuestions":"int"
-      }
-    }
-  ],
-  "totalEvaluation":{
-    "passModuleLimitCount":"int",
-    "actualPassedModuleCount":"int",
-    "totalMarks":"double",
-    "totalMrksPercent":"double"
-  }
-}
-"""
-</file>
-
-<file path="skillio-backend/app/redis_utils.py">
-import redis
-
-redisClient = None
-
-def getRedisClient():
-    global redisClient
-    try:
-        if not redisClient:
-            redisClient = redis.Redis(
-            host='localhost', 
-            port=6379, 
-            db=0, 
-            decode_responses=True
-            )
-        return redisClient
-    except Exception as e:
-        raise Exception(f'Error occured when creating redis client: {str(e)}')
-</file>
-
 <file path="skillio-backend/app/requests/assignTeamReq.py">
 from pydantic import BaseModel, Field
 
@@ -12869,6 +13231,34 @@ env_files =
     .env
 </file>
 
+<file path="skillio-backend/test_eval.py">
+import os
+import sys
+
+# Set up paths and environment
+sys.path.insert(0, r"e:\Work\College_works\Competitions\SAAS Sprint\Code\skillio\skillio-backend")
+from app.Service.employeeDashboardService import evaluationIntial
+from app.requests.submitSolutionsInitialReq import submitSolutionsInitialReq, InitialQuestionAnswer
+
+def test():
+    req = submitSolutionsInitialReq(
+        trainingID="fake_training_id",
+        initialQuestions=[
+            InitialQuestionAnswer(questionIndex=0, correctAnswer=1)
+        ]
+    )
+    # This will likely fail with "Training not found", but we can see if it throws an unexpected exception!
+    res = evaluationIntial(req, "fake_employee_id")
+    print(res)
+
+if __name__ == "__main__":
+    from mongoengine import connect
+    from dotenv import load_dotenv
+    load_dotenv(r"e:\Work\College_works\Competitions\SAAS Sprint\Code\skillio\.env")
+    connect(host=os.getenv('MONGO_URI'))
+    test()
+</file>
+
 <file path="skillio-backend/tests/conftest.py">
 import pytest
 from app import create_app, db
@@ -13110,6 +13500,172 @@ class Training(db.Document):
     predictedFinalScore = db.FloatField()
 
     organizationID = db.StringField()
+</file>
+
+<file path="skillio-backend/app/Model/TrainingContent.py">
+from typing import Optional
+from app import db
+
+class Question(db.EmbeddedDocument):
+    questions = db.StringField()
+    answerChoices = db.ListField(db.StringField())
+    corretnessStatus = db.BooleanField()
+    userProvidedAnswer = db.IntField()
+    correctAnswer = db.IntField()
+
+class InitialQuestionEvaluation(db.EmbeddedDocument):
+    initialQuestionMarks = db.FloatField()
+    initialQuestionMarksPercent = db.FloatField()
+    totalQuestions = db.IntField()
+    correctedCount = db.IntField()
+
+class Paragraph(db.EmbeddedDocument):
+    paragraph = db.StringField()
+    components = db.ListField(db.DictField())
+    connections = db.ListField(db.DictField())
+    has_diagram = db.BooleanField(default=False)
+    mermaid_diagram = db.StringField()
+
+class Article(db.EmbeddedDocument):
+    articleTitle = db.StringField()
+    paragraphs = db.ListField(db.EmbeddedDocumentField(Paragraph))
+
+class VoiceCover(db.EmbeddedDocument):
+    slideNumber = db.StringField()
+    voiceFileLink = db.StringField()
+
+class Slide(db.EmbeddedDocument):
+    slideName = db.StringField()
+    slideLink = db.StringField()
+    totSlideCount = db.IntField()
+    voiceCovers = db.ListField(db.EmbeddedDocumentField(VoiceCover))
+
+class EvaluationStatus(db.EmbeddedDocument):
+    passedStatus = db.BooleanField()
+    passLimit = db.FloatField()
+    obtainedMarks = db.FloatField()
+    totalCorrectedCount = db.IntField()
+    obtainedMarksPrecent = db.FloatField()
+    totalQuestions = db.IntField()
+
+class Module(db.EmbeddedDocument):
+    moduleTitle = db.StringField()
+    moduleDescription = db.StringField()
+    articles = db.ListField(db.EmbeddedDocumentField(Article))
+    slides = db.ListField(db.EmbeddedDocumentField(Slide))
+    evaluationQuestions = db.ListField(db.EmbeddedDocumentField(Question))
+    evaluationStatus = db.EmbeddedDocumentField(EvaluationStatus)
+
+class TotalEvaluation(db.EmbeddedDocument):
+    passModuleLimitCount = db.IntField()
+    actualPassedModuleCount = db.IntField()
+    totalMarks = db.FloatField()
+    totalMrksPercent = db.FloatField()
+
+class TrainingContent(db.Document):
+    meta = {'collection': 'trainingContent'}
+
+    title = db.StringField()
+    overview = db.StringField()
+    initialQuestions = db.ListField(db.EmbeddedDocumentField(Question))
+    initialQuestionEvaluation = db.EmbeddedDocumentField(InitialQuestionEvaluation)
+    modules = db.ListField(db.EmbeddedDocumentField(Module))
+    totalEvaluation = db.EmbeddedDocumentField(TotalEvaluation)
+    companyAccID = db.StringField()
+
+"""sumary_line
+{
+  "title":"str",
+  "overview":"str",
+  "initialQuestions":[
+    {
+      "questions":"str",
+      "answerChoices":"string arr",
+      "corretnessStatus":"bool",
+      "userProvidedAnswer":"int",
+      "correctAnswer":"int"
+    }
+  ],
+  "initialQuestionEvaluation":{
+    "initialQuestionMarks":"double",
+    "initialQuestionMarksPercent":"double",
+    "totalQuestions":"int",
+    "correctedCount":"int"
+  },
+  "modules":[
+    {
+      "moduleTitle":"str",
+      "moduleDescription":"str",
+      "articles":[
+        {
+          "articleTitle":"str",
+          "paragraphs":[
+            {
+              "paragraph":"str"
+            }
+          ]
+        }
+      ],
+      "slides":[
+        {
+          "slideName":"str",
+          "slideLink":"str",
+          "totSlideCount":"int",
+          "voiceCovers":[
+            {
+              "slideNumber":"str",
+              "voiceFileLink":"str"
+            }
+          ]
+        }
+      ],
+      "evaluationQuestions":[
+        {
+          "questions":"str",
+          "answerChoices":"string arr",
+          "corretnessStatus":"bool",
+          "userProvidedAnswer":"int",
+          "correctAnswer":"int"
+        }
+      ],
+      "evaluationStatus":{
+        "passedStatus":"bool",
+        "passLimit":"double",
+        "obtainedMarks":"double",
+        "totalCorrectedCount":"int",
+        "obtainedMarksPrecent":"double",
+        "totalQuestions":"int"
+      }
+    }
+  ],
+  "totalEvaluation":{
+    "passModuleLimitCount":"int",
+    "actualPassedModuleCount":"int",
+    "totalMarks":"double",
+    "totalMrksPercent":"double"
+  }
+}
+"""
+</file>
+
+<file path="skillio-backend/app/redis_utils.py">
+import redis
+
+redisClient = None
+
+def getRedisClient():
+    global redisClient
+    try:
+        if not redisClient:
+            redisClient = redis.Redis(
+            host='localhost', 
+            port=6379, 
+            db=0, 
+            decode_responses=True
+            )
+        return redisClient
+    except Exception as e:
+        raise Exception(f'Error occured when creating redis client: {str(e)}')
 </file>
 
 <file path="skillio-backend/app/requests/createEmployeeReq.py">
@@ -13567,424 +14123,6 @@ def getSignedUrl(decordedData):
         "status": "error",
         "message": f"Error occurred getting signed URL: {str(e)}"
         }), 500
-</file>
-
-<file path="skillio-backend/app/Service/employeeDashboardService.py">
-from app.Model.Employee import Employee
-from app.jwt_utils import encode_employee_auth_token
-
-def performEmployeeLogin(email:str,password:str):
-    try:
-        employee = Employee.objects(email=email, password=password).first()
-        if employee:
-            token = encode_employee_auth_token(str(employee.id), str(employee.companyAccID))
-            return {
-                "status": "success",
-                "message": "Login successful",
-                "token": token,
-                "orgAccID": str(employee.companyAccID),
-                "employee": {
-                    "id": str(employee.id),
-                    "name": employee.employeeName,
-                    "email": employee.email,
-                    "roleID": employee.employeeRoleID,
-                    "deptID": employee.employeeDepartmentID,
-                    "orgAccID": str(employee.companyAccID)
-                }
-            }
-        else:
-            return {
-                "status": "failed",
-                "message": "Invalid email or password"
-            }
-    except Exception as e:
-        print(f"Error in performEmployeeLogin: {str(e)}")
-        raise e
-
-from app.Model.Employee import Employee
-from app.Model.Training import Training
-from app.Model.TrainingContent import TrainingContent
-from app.Model.EmployeeRole import EmployeeRole
-from app.Model.Department import Department
-from app.Model.EmployeeTeam import EmployeeTeam
-from app.Model.DefinedSkill import DefinedSkill
-from app.response.allTrainingRes import TrainingRes, TrainingContentRes, QuestionRes, ModuleRes, ArticleRes, ParagraphRes, SlideRes, VoiceCoverRes, EvaluationStatusRes
-
-def getAllTrainingData(employeeID: str):
-    try:
-        employeeGot = Employee.objects(id=employeeID).first()
-        if not employeeGot:
-            return {"status": "failed", "message": "Employee not found"}
-
-        employeeName = employeeGot.employeeName
-        employeeRoleName = "N/A"
-        allSkillNames = []
-        
-        if employeeGot.employeeRoleID:
-            employeeRole = EmployeeRole.objects(id=employeeGot.employeeRoleID).first()
-            if employeeRole:
-                employeeRoleName = employeeRole.roleName
-                if employeeRole.roleSkillid:
-                    for skID in employeeRole.roleSkillid:
-                        skill = DefinedSkill.objects(id=skID).first()
-                        if skill:
-                            allSkillNames.append(skill.skill_name)
-
-        employeeDepartmentName = "N/A"
-        if employeeGot.employeeDepartmentID:
-            dept = Department.objects(id=employeeGot.employeeDepartmentID).first()
-            if dept:
-                employeeDepartmentName = dept.deptName
-
-        employeeTeamName = "N/A"
-        if employeeGot.teamID:
-            team = EmployeeTeam.objects(id=employeeGot.teamID).first()
-            if team:
-                employeeTeamName = team.teamName
-
-        allTraining = Training.objects(employeeID=employeeID)
-        response_list = []
-        
-        for train in allTraining:
-            content_obj = TrainingContent.objects(id=train.trainingContentID).first()
-            newContentRes = None
-            
-            if content_obj:
-                initial_qs = []
-                if content_obj.initialQuestions:
-                    for q in content_obj.initialQuestions:
-                        initial_qs.append(QuestionRes(
-                            questions=q.questions,
-                            answerChoices=q.answerChoices,
-                            correctAnswer=q.correctAnswer,
-                            userProvidedAnswer=getattr(q, 'userProvidedAnswer', None),
-                            # Fixes the typo from the DB document "corretnessStatus"
-                            correctnessStatus=getattr(q, 'corretnessStatus', None) 
-                        ))
-                
-                module_res_list = []
-                if content_obj.modules:
-                    for m in content_obj.modules:
-                        articles_res = [ArticleRes(articleTitle=art.articleTitle, paragraphs=[ParagraphRes(paragraph=p.paragraph) for p in art.paragraphs]) for art in m.articles]
-                        slides_res = [SlideRes(slideName=s.slideName, slideLink=s.slideLink, totSlideCount=s.totSlideCount, voiceCovers=[VoiceCoverRes(slideNumber=vc.slideNumber, voiceFileLink=vc.voiceFileLink) for vc in s.voiceCovers]) for s in m.slides]
-                        eval_qs_res = [QuestionRes(questions=eq.questions, answerChoices=eq.answerChoices, correctAnswer=eq.correctAnswer) for eq in m.evaluationQuestions]
-
-                        module_res_list.append(ModuleRes(
-                            moduleTitle=m.moduleTitle,
-                            moduleDescription=m.moduleDescription,
-                            articles=articles_res,
-                            slides=slides_res,
-                            evaluationQuestions=eval_qs_res,
-                            evaluationStatus=EvaluationStatusRes(
-                                passedStatus=m.evaluationStatus.passedStatus,
-                                passLimit=m.evaluationStatus.passLimit,
-                                obtainedMarks=m.evaluationStatus.obtainedMarks,
-                                totalCorrectedCount=m.evaluationStatus.totalCorrectedCount,
-                                obtainedMarksPrecent=m.evaluationStatus.obtainedMarksPrecent,
-                                totalQuestions=m.evaluationStatus.totalQuestions
-                            ) if m.evaluationStatus else None
-                        ))
-
-                # Handle the evaluation dict extraction safely
-                eval_dict = None
-                if hasattr(content_obj, 'initialQuestionEvaluation') and content_obj.initialQuestionEvaluation:
-                    eval_dict = content_obj.initialQuestionEvaluation.to_mongo().to_dict()
-
-                newContentRes = TrainingContentRes(
-                    title=content_obj.title,
-                    overview=content_obj.overview,
-                    initialQuestions=initial_qs,
-                    modules=module_res_list,
-                    totalEvaluation=content_obj.totalEvaluation.to_mongo().to_dict() if content_obj.totalEvaluation else None,
-                    initialQuestionEvaluation=eval_dict
-                )
-
-            newRes = TrainingRes(
-                id=str(train.id),
-                trainingContentID=train.trainingContentID or '',
-                growth=train.growth,
-                performanceIncrease=train.performanceIncrease,
-                trainingStatus=train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus),
-                trainingPassStatus=train.trainingPassStatus,
-                extractedNewSkillsInModeule=train.extractedNewSkillsInModeule,
-                predictedFinalScore=train.predictedFinalScore,
-                content=newContentRes,
-                employeeID=train.employeeID,
-                employeeName=employeeName,
-                employeeRoleName=employeeRoleName,
-                employeeDepartmentName=employeeDepartmentName,
-                employeeSkills=allSkillNames,
-                employeeTeamName=employeeTeamName
-            )
-            response_list.append(newRes.model_dump())
-            
-        return {
-            "status": "success",
-            "data": response_list
-        }
-
-    except Exception as e:
-        print(f"Error in getAllTrainingData: {str(e)}")
-        return {
-            "status": "failed",
-            "message": f"Internal server error: {str(e)}"
-        }
-
-from app.requests.submitSolutionsInitialReq import submitSolutionsInitialReq
-
-def evaluationIntial(answers: submitSolutionsInitialReq,employeeID:str):
-    try:
-        from app.Model.TrainingContent import InitialQuestionEvaluation
-        from app.Model.enum.proficiencyLevelInitialQuestions import proficiencyLevelInitialQuestions
-        trainingData = Training.objects(id=answers.trainingID).first()
-        if not trainingData:
-            return {"status": "failed", "message": "Training not found"}
-            
-        trainingContent = TrainingContent.objects(id=trainingData.trainingContentID).first()
-        if not trainingContent:
-            return {"status": "failed", "message": "Training content not found"}
-
-        initialQ = trainingContent.initialQuestions
-        correctedCount = 0
-        totalQuestions = len(initialQ)
-        
-        for qObj in answers.initialQuestions:
-            if qObj.questionIndex < totalQuestions:
-                currentQ = initialQ[qObj.questionIndex]
-                # In the request model, 'correctAnswer' represents the user's selected choice index
-                userChoice = qObj.correctAnswer
-                currentQ.userProvidedAnswer = userChoice
-                
-                if currentQ.correctAnswer == userChoice:
-                    currentQ.corretnessStatus = True
-                    correctedCount += 1
-                else:
-                    currentQ.corretnessStatus = False
-        
-        # Mark for each question is 10
-        initialQuestionMarks = correctedCount * 10
-        initialQuestionMarksPercent = (correctedCount / totalQuestions * 100) if totalQuestions > 0 else 0
-        
-        trainingContent.initialQuestionEvaluation = InitialQuestionEvaluation(
-            initialQuestionMarks=float(initialQuestionMarks),
-            initialQuestionMarksPercent=float(initialQuestionMarksPercent),
-            totalQuestions=totalQuestions,
-            correctedCount=correctedCount
-        )
-        
-        if float(initialQuestionMarksPercent) >= 70.0:
-            proficiencyLevel = proficiencyLevelInitialQuestions.HIGH
-        elif float(initialQuestionMarksPercent) >= 40.0:
-            proficiencyLevel = proficiencyLevelInitialQuestions.MEDIUM
-        else:
-            proficiencyLevel = proficiencyLevelInitialQuestions.LOW        
-            
-        trainingContent.save()
-        
-        #get the skill list
-        employee = Employee.objects(id=employeeID).first()
-        role = EmployeeRole.objects(id=employee.employeeRoleID).first()
-        skillIDList = role.roleSkillid
-        allSkillNames = []
-        for skill in skillIDList:
-            sillObj = DefinedSkill.objects(id=skill).first()
-            if sillObj:
-                allSkillNames.append(sillObj.skill_name)
-                
-        #then call the complete course creator
-        from app.Tasks.generate_course import create_course
-        create_course.delay(
-            contentID=str(trainingContent.id),
-            role=role.roleName,
-            target_skills=allSkillNames,
-            proficiencyLevel=proficiencyLevel.value,
-            employeeID=employeeID
-        )
-
-        return {
-            "status": "success",
-            "message": "Initial evaluation completed",
-            "data": {
-                "marks": initialQuestionMarks,
-                "percent": initialQuestionMarksPercent,
-                "correctedCount": correctedCount,
-                "totalQuestions": totalQuestions
-            }
-        }
-    except Exception as e:
-        print(f"Error in evaluationIntial: {str(e)}")
-        return {"status": "failed", "message": f"An error occurred: {str(e)}"}
-
-
-def calEvaluationModule(ansData: submitModuleAnswersReq):
-    try:
-        from app.Model.TrainingContent import TrainingContent, EvaluationStatus
-        content = TrainingContent.objects(id=ansData.trainingContentID).first()
-        
-        if not content:
-            return {"status": "error", "message": "Training content not found"}
-            
-        relaventModule = None
-        if ansData.moduleArrIndex < len(content.modules):
-            relaventModule = content.modules[ansData.moduleArrIndex]
-            
-        if not relaventModule:
-            return {"status": "error", "message": "Module not found"}
-            
-        incorrectCount = 0
-        correctCount = 0
-        evaluationQues = relaventModule.evaluationQuestions
-        totalQuestions = len(evaluationQues)
-        
-        for singleQObj in evaluationQues:
-            singleQuestion = singleQObj.questions
-            userAnswerList = ansData.answers
-            
-            userAns = None
-            for a in userAnswerList: 
-                if singleQuestion == a.questionStr:
-                    userAns = a.qAnsNum
-                    break
-                    
-            if userAns is not None:
-                singleQObj.userProvidedAnswer = userAns
-                if userAns == singleQObj.correctAnswer:
-                    correctCount += 1
-                    singleQObj.corretnessStatus = True
-                else:
-                    incorrectCount += 1
-                    singleQObj.corretnessStatus = False
-            else:
-                incorrectCount += 1
-                singleQObj.corretnessStatus = False
-                
-        limit = 60.0
-        obtainedMarks = 0.0
-        percent = 0.0
-        
-        if totalQuestions > 0:
-            markForEach = 100.0 / totalQuestions
-            obtainedMarks = markForEach * correctCount
-            percent = (correctCount / totalQuestions) * 100.0
-            
-        passStatus = True if percent >= limit else False
-        
-        relaventModule.evaluationStatus = EvaluationStatus(
-            passedStatus=passStatus,
-            passLimit=limit,
-            obtainedMarks=obtainedMarks,
-            totalCorrectedCount=correctCount,
-            obtainedMarksPrecent=percent,
-            totalQuestions=totalQuestions
-        )
-        
-        content.save()
-        
-        return {
-            "status": "success", 
-            "message": "Evaluation submitted successfully",
-            "data": {
-                "passedStatus": passStatus,
-                "obtainedMarks": obtainedMarks,
-                "obtainedMarksPrecent": percent,
-                "totalCorrectedCount": correctCount,
-                "totalQuestions": totalQuestions
-            }
-        }
-    except Exception as e:
-        print(f"Error in calEvaluationModule: {str(e)}")
-        return {"status": "error", "message": f"An error occurred: {str(e)}"}
-
-
-def finalEvalCal(trainingContID: str,trainingID: str):
-    try:
-        content = TrainingContent.objects(id=trainingContID).first()
-        trainingBase = Training.objects(id=trainingID).first()
-        if not content:
-            return {"status": "failed", "message": "Training content not found."}
-            
-        allModules = content.modules
-        passModuleLimitCount = len(allModules)
-        actualPassedModuleCount = 0
-        totMarks = 0.0
-        totCompleteMarks = 0.0
-        
-        for m in allModules:
-            if not m.evaluationStatus or not m.evaluationStatus.passedStatus:
-                return {"status": "failed", "message": "To pass the path, all the modules must be passed"}
-            
-            actualPassedModuleCount += 1
-            totMarks += (m.evaluationStatus.obtainedMarks or 0.0)
-            totCompleteMarks += 100.0
-                
-        totalMrksPercent = 0.0
-        if totCompleteMarks > 0:
-            totalMrksPercent = (totMarks / totCompleteMarks) * 100.0
-            
-        from app.Model.TrainingContent import TotalEvaluation
-        content.totalEvaluation = TotalEvaluation(
-            passModuleLimitCount=passModuleLimitCount,
-            actualPassedModuleCount=actualPassedModuleCount,
-            totalMarks=totMarks,
-            totalMrksPercent=totalMrksPercent
-        )
-        content.save()
-
-        #update the training status
-        if trainingBase:
-            from app.Model.enum.trainingStatus import trainingStatus
-            trainingBase.trainingStatus = trainingStatus.FINISHED
-            trainingBase.save()
-        
-        return {
-            "status": "success", 
-            "message": "Final evaluation calculated successfully.",
-            "data": {
-                "passModuleLimitCount": passModuleLimitCount,
-                "actualPassedModuleCount": actualPassedModuleCount,
-                "totalMarks": totMarks,
-                "totalMrksPercent": totalMrksPercent
-            }
-        }
-    except Exception as e:
-        print(f"Error in finalEvalCal: {str(e)}")
-        return {"status": "error", "message": f"An error occurred: {str(e)}"}
-
-
-def updateEmAccByID(data):
-    try:
-        from app.requests.updateEmProfReq import updateEmProfReq
-        foundEm = Employee.objects(id=data.emplpyeeDocID).first()
-        if foundEm:
-            if data.newEmployeeName is not None:
-                foundEm.employeeName = data.newEmployeeName
-            if data.password is not None:
-                foundEm.password = data.password
-            if data.newContact is not None:
-                foundEm.contactnumber = data.newContact
-            if data.newAddress is not None:
-                foundEm.address = data.newAddress
-            if data.newProfileImgUrl is not None:
-                foundEm.profileImageUrl = data.newProfileImgUrl
-                
-            foundEm.save()
-            return {
-                "status": "success",
-                "message": "Profile updated successfully",
-                "employee": {
-                    "id": str(foundEm.id),
-                    "name": foundEm.employeeName,
-                    "email": foundEm.email,
-                    "contactnumber": foundEm.contactnumber,
-                    "address": foundEm.address,
-                    "profileImageUrl": foundEm.profileImageUrl
-                }
-            }
-        else:
-            return {"status": "failed", "message": "Employee not found"}
-    except Exception as e:
-        print(f"Error in updateEmAccByID: {str(e)}")
-        return {"status": "error", "message": f"An error occurred: {str(e)}"}
 </file>
 
 <file path="skillio-backend/app/Service/employeeManageService.py">
@@ -14622,20 +14760,6 @@ function AssessmentView({ trainingID, questions, onSuccess }: { trainingID: stri
 }
 </file>
 
-<file path="skillio-backend/app/config.py">
-import os
-import certifi
-from dotenv import load_dotenv
-load_dotenv()
-class Config:
-    # SECRET_KEY = os.getenv('JWT_SECRET', 'skillio_secret_key_12345')
-    MONGODB_SETTINGS = {
-        'host': os.getenv('MONGO_DB_URL'),
-        'db': 'skillio_official',
-        'tlsCAFile': certifi.where()
-    }
-</file>
-
 <file path="skillio-backend/app/decorators/token_required.py">
 from app.Model.OrganizationAccount import OrganizationAccount
 from app.Model.Employee import Employee
@@ -14713,6 +14837,20 @@ def token_required_employees(f):
     return decorated
 </file>
 
+<file path="skillio-backend/app/config.py">
+import os
+import certifi
+from dotenv import load_dotenv
+load_dotenv()
+class Config:
+    # SECRET_KEY = os.getenv('JWT_SECRET', 'skillio_secret_key_12345')
+    MONGODB_SETTINGS = {
+        'host': os.getenv('MONGO_DB_URL'),
+        'db': 'skillio_official',
+        'tlsCAFile': certifi.where()
+    }
+</file>
+
 <file path="skillio-backend/app/response/allTrainingRes.py">
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -14773,6 +14911,8 @@ class QuestionRes(BaseModel):
 
 class ParagraphRes(BaseModel):
     paragraph: str
+    mermaidCode: Optional[str] = None
+    has_diagram: bool = False
 
 class ArticleRes(BaseModel):
     articleTitle: str
@@ -14828,158 +14968,6 @@ class TrainingRes(BaseModel):
     employeeDepartmentName:str
     employeeSkills: list[str]
     employeeTeamName: str
-</file>
-
-<file path="skillio-backend/app/Service/trainingService.py">
-from app.Model.Training import Training
-from app.Model.TrainingContent import TrainingContent
-from app.Model.Employee import Employee
-from app.Model.EmployeeRole import EmployeeRole
-from app.Model.Department import Department
-from app.Model.EmployeeTeam import EmployeeTeam
-from app.Model.DefinedSkill import DefinedSkill
-from app.response.allTrainingRes import (
-    TrainingRes, TrainingContentRes, QuestionRes, ModuleRes,
-    ArticleRes, ParagraphRes, SlideRes, VoiceCoverRes, EvaluationStatusRes
-)
-
-def getAllTrainingData(orgID: str):
-    try:
-        allTraining = Training.objects(organizationID=orgID)
-        response_list = []
-        
-        for train in allTraining:
-            # Fetch content object
-            content_obj = TrainingContent.objects(id=train.trainingContentID).first()
-            newContentRes = None
-
-            # Employee details with null safety
-            employeeName = "N/A"
-            employeeRoleName = "N/A"
-            employeeDepartmentName = "N/A"
-            employeeTeamName = "N/A"
-            allSkillNames = []
-
-            employeeGot = Employee.objects(id=train.employeeID).first()
-            if employeeGot:
-                employeeName = employeeGot.employeeName or "N/A"
-
-                if employeeGot.employeeRoleID:
-                    employeeRole = EmployeeRole.objects(id=employeeGot.employeeRoleID).first()
-                    if employeeRole:
-                        employeeRoleName = employeeRole.roleName or "N/A"
-                        if employeeRole.roleSkillid:
-                            for skID in employeeRole.roleSkillid:
-                                skill = DefinedSkill.objects(id=skID).first()
-                                if skill:
-                                    allSkillNames.append(skill.skill_name)
-
-                if employeeGot.employeeDepartmentID:
-                    dept = Department.objects(id=employeeGot.employeeDepartmentID).first()
-                    if dept:
-                        employeeDepartmentName = dept.deptName or "N/A"
-
-                if employeeGot.teamID:
-                    team = EmployeeTeam.objects(id=employeeGot.teamID).first()
-                    if team:
-                        employeeTeamName = team.teamName or "N/A"
-
-            if content_obj:
-                # Map initial questions
-                initial_qs = []
-                if content_obj.initialQuestions:
-                    for q in content_obj.initialQuestions:
-                        initial_qs.append(QuestionRes(
-                            questions=q.questions,
-                            answerChoices=q.answerChoices,
-                            correctAnswer=q.correctAnswer
-                        ))
-                
-                # Map modules with full detail (articles, slides, evaluationQuestions, evaluationStatus)
-                module_res_list = []
-                if content_obj.modules:
-                    for m in content_obj.modules:
-                        articles_res = [
-                            ArticleRes(
-                                articleTitle=art.articleTitle,
-                                paragraphs=[ParagraphRes(paragraph=p.paragraph) for p in art.paragraphs]
-                            ) for art in m.articles
-                        ] if m.articles else []
-
-                        slides_res = [
-                            SlideRes(
-                                slideName=s.slideName,
-                                slideLink=s.slideLink,
-                                totSlideCount=s.totSlideCount,
-                                voiceCovers=[
-                                    VoiceCoverRes(slideNumber=vc.slideNumber, voiceFileLink=vc.voiceFileLink)
-                                    for vc in s.voiceCovers
-                                ] if s.voiceCovers else []
-                            ) for s in m.slides
-                        ] if m.slides else []
-
-                        eval_qs_res = [
-                            QuestionRes(
-                                questions=eq.questions,
-                                answerChoices=eq.answerChoices,
-                                correctAnswer=eq.correctAnswer
-                            ) for eq in m.evaluationQuestions
-                        ] if m.evaluationQuestions else []
-
-                        module_res_list.append(ModuleRes(
-                            moduleTitle=m.moduleTitle,
-                            moduleDescription=m.moduleDescription,
-                            articles=articles_res,
-                            slides=slides_res,
-                            evaluationQuestions=eval_qs_res,
-                            evaluationStatus=EvaluationStatusRes(
-                                passedStatus=m.evaluationStatus.passedStatus,
-                                passLimit=m.evaluationStatus.passLimit,
-                                obtainedMarks=m.evaluationStatus.obtainedMarks,
-                                totalCorrectedCount=m.evaluationStatus.totalCorrectedCount,
-                                obtainedMarksPrecent=m.evaluationStatus.obtainedMarksPrecent,
-                                totalQuestions=m.evaluationStatus.totalQuestions
-                            ) if m.evaluationStatus else None
-                        ))
-
-                # Handle initialQuestionEvaluation safely
-                eval_dict = None
-                if hasattr(content_obj, 'initialQuestionEvaluation') and content_obj.initialQuestionEvaluation:
-                    eval_dict = content_obj.initialQuestionEvaluation.to_mongo().to_dict()
-
-                newContentRes = TrainingContentRes(
-                    title=content_obj.title,
-                    overview=content_obj.overview,
-                    initialQuestions=initial_qs,
-                    modules=module_res_list,
-                    totalEvaluation=content_obj.totalEvaluation.to_mongo().to_dict() if content_obj.totalEvaluation else None,
-                    initialQuestionEvaluation=eval_dict
-                )
-
-            newRes = TrainingRes(
-                id=str(train.id),
-                trainingContentID=train.trainingContentID or '',
-                growth=train.growth,
-                performanceIncrease=train.performanceIncrease,
-                trainingStatus=train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus),
-                trainingPassStatus=train.trainingPassStatus,
-                extractedNewSkillsInModeule=train.extractedNewSkillsInModeule,
-                predictedFinalScore=train.predictedFinalScore,
-                content=newContentRes,
-                employeeID=train.employeeID,
-                employeeName=employeeName,
-                employeeRoleName=employeeRoleName,
-                employeeDepartmentName=employeeDepartmentName,
-                employeeSkills=allSkillNames,
-                employeeTeamName=employeeTeamName
-            )
-            response_list.append(newRes.model_dump())
-            
-        return response_list
-
-    except Exception as e:
-        print(f"Error in getAllTrainingData: {str(e)}")
-        raise e
 </file>
 
 <file path="skillio-backend/app/routes/adminDashboardRoutes.py">
@@ -16066,6 +16054,580 @@ def test_create_course_route():
         }), 500
 </file>
 
+<file path="skillio-backend/app/Service/employeeDashboardService.py">
+from app.Model.Employee import Employee
+from app.jwt_utils import encode_employee_auth_token
+
+def performEmployeeLogin(email:str,password:str):
+    try:
+        employee = Employee.objects(email=email, password=password).first()
+        if employee:
+            token = encode_employee_auth_token(str(employee.id), str(employee.companyAccID))
+            return {
+                "status": "success",
+                "message": "Login successful",
+                "token": token,
+                "orgAccID": str(employee.companyAccID),
+                "employee": {
+                    "id": str(employee.id),
+                    "name": employee.employeeName,
+                    "email": employee.email,
+                    "roleID": employee.employeeRoleID,
+                    "deptID": employee.employeeDepartmentID,
+                    "orgAccID": str(employee.companyAccID)
+                }
+            }
+        else:
+            return {
+                "status": "failed",
+                "message": "Invalid email or password"
+            }
+    except Exception as e:
+        print(f"Error in performEmployeeLogin: {str(e)}")
+        raise e
+
+from app.Model.Employee import Employee
+from app.Model.Training import Training
+from app.Model.TrainingContent import TrainingContent
+from app.Model.EmployeeRole import EmployeeRole
+from app.Model.Department import Department
+from app.Model.EmployeeTeam import EmployeeTeam
+from app.Model.DefinedSkill import DefinedSkill
+from app.response.allTrainingRes import TrainingRes, TrainingContentRes, QuestionRes, ModuleRes, ArticleRes, ParagraphRes, SlideRes, VoiceCoverRes, EvaluationStatusRes
+
+def getAllTrainingData(employeeID: str):
+    try:
+        employeeGot = Employee.objects(id=employeeID).first()
+        if not employeeGot:
+            return {"status": "failed", "message": "Employee not found"}
+
+        employeeName = employeeGot.employeeName
+        employeeRoleName = "N/A"
+        allSkillNames = []
+        
+        if employeeGot.employeeRoleID:
+            employeeRole = EmployeeRole.objects(id=employeeGot.employeeRoleID).first()
+            if employeeRole:
+                employeeRoleName = employeeRole.roleName
+                if employeeRole.roleSkillid:
+                    for skID in employeeRole.roleSkillid:
+                        skill = DefinedSkill.objects(id=skID).first()
+                        if skill:
+                            allSkillNames.append(skill.skill_name)
+
+        employeeDepartmentName = "N/A"
+        if employeeGot.employeeDepartmentID:
+            dept = Department.objects(id=employeeGot.employeeDepartmentID).first()
+            if dept:
+                employeeDepartmentName = dept.deptName
+
+        employeeTeamName = "N/A"
+        if employeeGot.teamID:
+            team = EmployeeTeam.objects(id=employeeGot.teamID).first()
+            if team:
+                employeeTeamName = team.teamName
+
+        allTraining = Training.objects(employeeID=employeeID)
+        response_list = []
+        
+        for train in allTraining:
+            content_obj = TrainingContent.objects(id=train.trainingContentID).first()
+            newContentRes = None
+            
+            if content_obj:
+                initial_qs = []
+                if content_obj.initialQuestions:
+                    for q in content_obj.initialQuestions:
+                        initial_qs.append(QuestionRes(
+                            questions=q.questions,
+                            answerChoices=q.answerChoices,
+                            correctAnswer=q.correctAnswer,
+                            userProvidedAnswer=getattr(q, 'userProvidedAnswer', None),
+                            # Fixes the typo from the DB document "corretnessStatus"
+                            correctnessStatus=getattr(q, 'corretnessStatus', None) 
+                        ))
+                
+                module_res_list = []
+                if content_obj.modules:
+                    for m in content_obj.modules:
+                        articles_res = [ArticleRes(articleTitle=art.articleTitle, paragraphs=[ParagraphRes(paragraph=p.paragraph,has_diagram=p.has_diagram,mermaidCode=p.mermaid_diagram) for p in art.paragraphs]) for art in m.articles]
+                        slides_res = [SlideRes(slideName=s.slideName, slideLink=s.slideLink, totSlideCount=s.totSlideCount, voiceCovers=[VoiceCoverRes(slideNumber=vc.slideNumber, voiceFileLink=vc.voiceFileLink) for vc in s.voiceCovers]) for s in m.slides]
+                        eval_qs_res = [QuestionRes(questions=eq.questions, answerChoices=eq.answerChoices, correctAnswer=eq.correctAnswer) for eq in m.evaluationQuestions]
+
+                        module_res_list.append(ModuleRes(
+                            moduleTitle=m.moduleTitle,
+                            moduleDescription=m.moduleDescription,
+                            articles=articles_res,
+                            slides=slides_res,
+                            evaluationQuestions=eval_qs_res,
+                            evaluationStatus=EvaluationStatusRes(
+                                passedStatus=m.evaluationStatus.passedStatus,
+                                passLimit=m.evaluationStatus.passLimit,
+                                obtainedMarks=m.evaluationStatus.obtainedMarks,
+                                totalCorrectedCount=m.evaluationStatus.totalCorrectedCount,
+                                obtainedMarksPrecent=m.evaluationStatus.obtainedMarksPrecent,
+                                totalQuestions=m.evaluationStatus.totalQuestions
+                            ) if m.evaluationStatus else None
+                        ))
+
+                # Handle the evaluation dict extraction safely
+                eval_dict = None
+                if hasattr(content_obj, 'initialQuestionEvaluation') and content_obj.initialQuestionEvaluation:
+                    eval_dict = content_obj.initialQuestionEvaluation.to_mongo().to_dict()
+
+                newContentRes = TrainingContentRes(
+                    title=content_obj.title,
+                    overview=content_obj.overview,
+                    initialQuestions=initial_qs,
+                    modules=module_res_list,
+                    totalEvaluation=content_obj.totalEvaluation.to_mongo().to_dict() if content_obj.totalEvaluation else None,
+                    initialQuestionEvaluation=eval_dict
+                )
+
+            newRes = TrainingRes(
+                id=str(train.id),
+                trainingContentID=train.trainingContentID or '',
+                growth=train.growth,
+                performanceIncrease=train.performanceIncrease,
+                trainingStatus=train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus),
+                trainingPassStatus=train.trainingPassStatus,
+                extractedNewSkillsInModeule=train.extractedNewSkillsInModeule,
+                predictedFinalScore=train.predictedFinalScore,
+                content=newContentRes,
+                employeeID=train.employeeID,
+                employeeName=employeeName,
+                employeeRoleName=employeeRoleName,
+                employeeDepartmentName=employeeDepartmentName,
+                employeeSkills=allSkillNames,
+                employeeTeamName=employeeTeamName
+            )
+            response_list.append(newRes.model_dump())
+            
+        return {
+            "status": "success",
+            "data": response_list
+        }
+
+    except Exception as e:
+        print(f"Error in getAllTrainingData: {str(e)}")
+        return {
+            "status": "failed",
+            "message": f"Internal server error: {str(e)}"
+        }
+
+from app.requests.submitSolutionsInitialReq import submitSolutionsInitialReq
+
+def evaluationIntial(answers: submitSolutionsInitialReq,employeeID:str):
+    try:
+        from app.Model.TrainingContent import InitialQuestionEvaluation
+        from app.Model.enum.proficiencyLevelInitialQuestions import proficiencyLevelInitialQuestions
+        trainingData = Training.objects(id=answers.trainingID).first()
+        if not trainingData:
+            return {"status": "failed", "message": "Training not found"}
+            
+        trainingContent = TrainingContent.objects(id=trainingData.trainingContentID).first()
+        if not trainingContent:
+            return {"status": "failed", "message": "Training content not found"}
+
+        initialQ = trainingContent.initialQuestions
+        correctedCount = 0
+        totalQuestions = len(initialQ)
+        
+        for qObj in answers.initialQuestions:
+            if qObj.questionIndex < totalQuestions:
+                currentQ = initialQ[qObj.questionIndex]
+                # In the request model, 'correctAnswer' represents the user's selected choice index
+                userChoice = qObj.correctAnswer
+                currentQ.userProvidedAnswer = userChoice
+                
+                if currentQ.correctAnswer == userChoice:
+                    currentQ.corretnessStatus = True
+                    correctedCount += 1
+                else:
+                    currentQ.corretnessStatus = False
+        
+        # Mark for each question is 10
+        initialQuestionMarks = correctedCount * 10
+        initialQuestionMarksPercent = (correctedCount / totalQuestions * 100) if totalQuestions > 0 else 0
+        
+        trainingContent.initialQuestionEvaluation = InitialQuestionEvaluation(
+            initialQuestionMarks=float(initialQuestionMarks),
+            initialQuestionMarksPercent=float(initialQuestionMarksPercent),
+            totalQuestions=totalQuestions,
+            correctedCount=correctedCount
+        )
+        
+        if float(initialQuestionMarksPercent) >= 70.0:
+            proficiencyLevel = proficiencyLevelInitialQuestions.HIGH
+        elif float(initialQuestionMarksPercent) >= 40.0:
+            proficiencyLevel = proficiencyLevelInitialQuestions.MEDIUM
+        else:
+            proficiencyLevel = proficiencyLevelInitialQuestions.LOW        
+            
+        trainingContent.save()
+        
+        #get the skill list
+        employee = Employee.objects(id=employeeID).first()
+        role = EmployeeRole.objects(id=employee.employeeRoleID).first()
+        skillIDList = role.roleSkillid
+        allSkillNames = []
+        for skill in skillIDList:
+            sillObj = DefinedSkill.objects(id=skill).first()
+            if sillObj:
+                allSkillNames.append(sillObj.skill_name)
+                
+        #then call the complete course creator
+        from app.Tasks.generate_course import create_course
+        create_course.delay(
+            contentID=str(trainingContent.id),
+            role=role.roleName,
+            target_skills=allSkillNames,
+            proficiencyLevel=proficiencyLevel.value,
+            employeeID=employeeID
+        )
+
+        return {
+            "status": "success",
+            "message": "Initial evaluation completed",
+            "data": {
+                "marks": initialQuestionMarks,
+                "percent": initialQuestionMarksPercent,
+                "correctedCount": correctedCount,
+                "totalQuestions": totalQuestions
+            }
+        }
+    except Exception as e:
+        print(f"Error in evaluationIntial: {str(e)}")
+        return {"status": "failed", "message": f"An error occurred: {str(e)}"}
+from app.requests.submitModuleAnswersReq import submitModuleAnswersReq
+
+def calEvaluationModule(ansData: submitModuleAnswersReq):
+    try:
+        from app.Model.TrainingContent import TrainingContent, EvaluationStatus
+        content = TrainingContent.objects(id=ansData.trainingContentID).first()
+        
+        if not content:
+            return {"status": "error", "message": "Training content not found"}
+            
+        relaventModule = None
+        if ansData.moduleArrIndex < len(content.modules):
+            relaventModule = content.modules[ansData.moduleArrIndex]
+            
+        if not relaventModule:
+            return {"status": "error", "message": "Module not found"}
+            
+        incorrectCount = 0
+        correctCount = 0
+        evaluationQues = relaventModule.evaluationQuestions
+        totalQuestions = len(evaluationQues)
+        
+        for singleQObj in evaluationQues:
+            singleQuestion = singleQObj.questions
+            userAnswerList = ansData.answers
+            
+            userAns = None
+            for a in userAnswerList: 
+                if singleQuestion == a.questionStr:
+                    userAns = a.qAnsNum
+                    break
+                    
+            if userAns is not None:
+                singleQObj.userProvidedAnswer = userAns
+                if userAns == singleQObj.correctAnswer:
+                    correctCount += 1
+                    singleQObj.corretnessStatus = True
+                else:
+                    incorrectCount += 1
+                    singleQObj.corretnessStatus = False
+            else:
+                incorrectCount += 1
+                singleQObj.corretnessStatus = False
+                
+        limit = 60.0
+        obtainedMarks = 0.0
+        percent = 0.0
+        
+        if totalQuestions > 0:
+            markForEach = 100.0 / totalQuestions
+            obtainedMarks = markForEach * correctCount
+            percent = (correctCount / totalQuestions) * 100.0
+            
+        passStatus = True if percent >= limit else False
+        
+        relaventModule.evaluationStatus = EvaluationStatus(
+            passedStatus=passStatus,
+            passLimit=limit,
+            obtainedMarks=obtainedMarks,
+            totalCorrectedCount=correctCount,
+            obtainedMarksPrecent=percent,
+            totalQuestions=totalQuestions
+        )
+        
+        content.save()
+        
+        return {
+            "status": "success", 
+            "message": "Evaluation submitted successfully",
+            "data": {
+                "passedStatus": passStatus,
+                "obtainedMarks": obtainedMarks,
+                "obtainedMarksPrecent": percent,
+                "totalCorrectedCount": correctCount,
+                "totalQuestions": totalQuestions
+            }
+        }
+    except Exception as e:
+        print(f"Error in calEvaluationModule: {str(e)}")
+        return {"status": "error", "message": f"An error occurred: {str(e)}"}
+
+
+def finalEvalCal(trainingContID: str,trainingID: str):
+    try:
+        content = TrainingContent.objects(id=trainingContID).first()
+        trainingBase = Training.objects(id=trainingID).first()
+        if not content:
+            return {"status": "failed", "message": "Training content not found."}
+            
+        allModules = content.modules
+        passModuleLimitCount = len(allModules)
+        actualPassedModuleCount = 0
+        totMarks = 0.0
+        totCompleteMarks = 0.0
+        
+        for m in allModules:
+            if not m.evaluationStatus or not m.evaluationStatus.passedStatus:
+                return {"status": "failed", "message": "To pass the path, all the modules must be passed"}
+            
+            actualPassedModuleCount += 1
+            totMarks += (m.evaluationStatus.obtainedMarks or 0.0)
+            totCompleteMarks += 100.0
+                
+        totalMrksPercent = 0.0
+        if totCompleteMarks > 0:
+            totalMrksPercent = (totMarks / totCompleteMarks) * 100.0
+            
+        from app.Model.TrainingContent import TotalEvaluation
+        content.totalEvaluation = TotalEvaluation(
+            passModuleLimitCount=passModuleLimitCount,
+            actualPassedModuleCount=actualPassedModuleCount,
+            totalMarks=totMarks,
+            totalMrksPercent=totalMrksPercent
+        )
+        content.save()
+
+        #update the training status
+        if trainingBase:
+            from app.Model.enum.trainingStatus import trainingStatus
+            trainingBase.trainingStatus = trainingStatus.FINISHED
+            trainingBase.save()
+        
+        return {
+            "status": "success", 
+            "message": "Final evaluation calculated successfully.",
+            "data": {
+                "passModuleLimitCount": passModuleLimitCount,
+                "actualPassedModuleCount": actualPassedModuleCount,
+                "totalMarks": totMarks,
+                "totalMrksPercent": totalMrksPercent
+            }
+        }
+    except Exception as e:
+        print(f"Error in finalEvalCal: {str(e)}")
+        return {"status": "error", "message": f"An error occurred: {str(e)}"}
+
+
+def updateEmAccByID(data):
+    try:
+        from app.requests.updateEmProfReq import updateEmProfReq
+        foundEm = Employee.objects(id=data.emplpyeeDocID).first()
+        if foundEm:
+            if data.newEmployeeName is not None:
+                foundEm.employeeName = data.newEmployeeName
+            if data.password is not None:
+                foundEm.password = data.password
+            if data.newContact is not None:
+                foundEm.contactnumber = data.newContact
+            if data.newAddress is not None:
+                foundEm.address = data.newAddress
+            if data.newProfileImgUrl is not None:
+                foundEm.profileImageUrl = data.newProfileImgUrl
+                
+            foundEm.save()
+            return {
+                "status": "success",
+                "message": "Profile updated successfully",
+                "employee": {
+                    "id": str(foundEm.id),
+                    "name": foundEm.employeeName,
+                    "email": foundEm.email,
+                    "contactnumber": foundEm.contactnumber,
+                    "address": foundEm.address,
+                    "profileImageUrl": foundEm.profileImageUrl
+                }
+            }
+        else:
+            return {"status": "failed", "message": "Employee not found"}
+    except Exception as e:
+        print(f"Error in updateEmAccByID: {str(e)}")
+        return {"status": "error", "message": f"An error occurred: {str(e)}"}
+</file>
+
+<file path="skillio-backend/app/Service/trainingService.py">
+from app.Model.Training import Training
+from app.Model.TrainingContent import TrainingContent
+from app.Model.Employee import Employee
+from app.Model.EmployeeRole import EmployeeRole
+from app.Model.Department import Department
+from app.Model.EmployeeTeam import EmployeeTeam
+from app.Model.DefinedSkill import DefinedSkill
+from app.response.allTrainingRes import (
+    TrainingRes, TrainingContentRes, QuestionRes, ModuleRes,
+    ArticleRes, ParagraphRes, SlideRes, VoiceCoverRes, EvaluationStatusRes
+)
+
+def getAllTrainingData(orgID: str):
+    try:
+        allTraining = Training.objects(organizationID=orgID)
+        response_list = []
+        
+        for train in allTraining:
+            # Fetch content object
+            content_obj = TrainingContent.objects(id=train.trainingContentID).first()
+            newContentRes = None
+
+            # Employee details with null safety
+            employeeName = "N/A"
+            employeeRoleName = "N/A"
+            employeeDepartmentName = "N/A"
+            employeeTeamName = "N/A"
+            allSkillNames = []
+
+            employeeGot = Employee.objects(id=train.employeeID).first()
+            if employeeGot:
+                employeeName = employeeGot.employeeName or "N/A"
+
+                if employeeGot.employeeRoleID:
+                    employeeRole = EmployeeRole.objects(id=employeeGot.employeeRoleID).first()
+                    if employeeRole:
+                        employeeRoleName = employeeRole.roleName or "N/A"
+                        if employeeRole.roleSkillid:
+                            for skID in employeeRole.roleSkillid:
+                                skill = DefinedSkill.objects(id=skID).first()
+                                if skill:
+                                    allSkillNames.append(skill.skill_name)
+
+                if employeeGot.employeeDepartmentID:
+                    dept = Department.objects(id=employeeGot.employeeDepartmentID).first()
+                    if dept:
+                        employeeDepartmentName = dept.deptName or "N/A"
+
+                if employeeGot.teamID:
+                    team = EmployeeTeam.objects(id=employeeGot.teamID).first()
+                    if team:
+                        employeeTeamName = team.teamName or "N/A"
+
+            if content_obj:
+                # Map initial questions
+                initial_qs = []
+                if content_obj.initialQuestions:
+                    for q in content_obj.initialQuestions:
+                        initial_qs.append(QuestionRes(
+                            questions=q.questions,
+                            answerChoices=q.answerChoices,
+                            correctAnswer=q.correctAnswer
+                        ))
+                
+                # Map modules with full detail (articles, slides, evaluationQuestions, evaluationStatus)
+                module_res_list = []
+                if content_obj.modules:
+                    for m in content_obj.modules:
+                        articles_res = [
+                            ArticleRes(
+                                articleTitle=art.articleTitle,
+                                paragraphs=[ParagraphRes(
+                                    paragraph=p.paragraph,
+                                    mermaidCode=p.mermaid_diagram,
+                                    has_diagram=p.has_diagram if p.has_diagram is not None else False
+                                ) for p in art.paragraphs]
+                            ) for art in m.articles
+                        ] if m.articles else []
+
+                        slides_res = [
+                            SlideRes(
+                                slideName=s.slideName,
+                                slideLink=s.slideLink,
+                                totSlideCount=s.totSlideCount,
+                                voiceCovers=[
+                                    VoiceCoverRes(slideNumber=vc.slideNumber, voiceFileLink=vc.voiceFileLink)
+                                    for vc in s.voiceCovers
+                                ] if s.voiceCovers else []
+                            ) for s in m.slides
+                        ] if m.slides else []
+
+                        eval_qs_res = [
+                            QuestionRes(
+                                questions=eq.questions,
+                                answerChoices=eq.answerChoices,
+                                correctAnswer=eq.correctAnswer
+                            ) for eq in m.evaluationQuestions
+                        ] if m.evaluationQuestions else []
+
+                        module_res_list.append(ModuleRes(
+                            moduleTitle=m.moduleTitle,
+                            moduleDescription=m.moduleDescription,
+                            articles=articles_res,
+                            slides=slides_res,
+                            evaluationQuestions=eval_qs_res,
+                            evaluationStatus=EvaluationStatusRes(
+                                passedStatus=m.evaluationStatus.passedStatus,
+                                passLimit=m.evaluationStatus.passLimit,
+                                obtainedMarks=m.evaluationStatus.obtainedMarks,
+                                totalCorrectedCount=m.evaluationStatus.totalCorrectedCount,
+                                obtainedMarksPrecent=m.evaluationStatus.obtainedMarksPrecent,
+                                totalQuestions=m.evaluationStatus.totalQuestions
+                            ) if m.evaluationStatus else None
+                        ))
+
+                # Handle initialQuestionEvaluation safely
+                eval_dict = None
+                if hasattr(content_obj, 'initialQuestionEvaluation') and content_obj.initialQuestionEvaluation:
+                    eval_dict = content_obj.initialQuestionEvaluation.to_mongo().to_dict()
+
+                newContentRes = TrainingContentRes(
+                    title=content_obj.title,
+                    overview=content_obj.overview,
+                    initialQuestions=initial_qs,
+                    modules=module_res_list,
+                    totalEvaluation=content_obj.totalEvaluation.to_mongo().to_dict() if content_obj.totalEvaluation else None,
+                    initialQuestionEvaluation=eval_dict
+                )
+
+            newRes = TrainingRes(
+                id=str(train.id),
+                trainingContentID=train.trainingContentID or '',
+                growth=train.growth,
+                performanceIncrease=train.performanceIncrease,
+                trainingStatus=train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus),
+                trainingPassStatus=train.trainingPassStatus,
+                extractedNewSkillsInModeule=train.extractedNewSkillsInModeule,
+                predictedFinalScore=train.predictedFinalScore,
+                content=newContentRes,
+                employeeID=train.employeeID,
+                employeeName=employeeName,
+                employeeRoleName=employeeRoleName,
+                employeeDepartmentName=employeeDepartmentName,
+                employeeSkills=allSkillNames,
+                employeeTeamName=employeeTeamName
+            )
+            response_list.append(newRes.model_dump())
+            
+        return response_list
+
+    except Exception as e:
+        print(f"Error in getAllTrainingData: {str(e)}")
+        raise e
+</file>
+
 <file path="skillio-backend/app/routes/loginRoutes.py">
 from flask import Blueprint, request, jsonify
 from mongoengine.errors import NotUniqueError, ValidationError, DoesNotExist
@@ -16417,29 +16979,6 @@ def create_org():
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 </file>
 
-<file path="skillio-backend/requirements.txt">
-Flask==2.3.3
-flask-mongoengine
-python-dotenv
-pydantic[email]
-pytest
-stripe
-PyJWT
-mailjet-rest
-cloudinary
-langchain
-redis
-Celery
-langchain-groq
-certifi 
-pymongo[srv]
-mdtopptx
-python-pptx
-gTTS
-flask-cors
-flask-sse
-</file>
-
 <file path="skillio-backend/app/__init__.py">
 from flask import Flask
 import flask.json
@@ -16490,20 +17029,45 @@ def create_app(config_class=Config):
     return app
 </file>
 
+<file path="skillio-backend/requirements.txt">
+Flask==2.3.3
+flask-mongoengine
+python-dotenv
+pydantic[email]
+pytest
+stripe
+PyJWT
+mailjet-rest
+cloudinary
+langchain
+redis
+Celery
+langchain-groq
+certifi 
+pymongo[srv]
+mdtopptx
+python-pptx
+gTTS
+flask-cors
+flask-sse
+langchain-ollama
+</file>
+
 <file path="skillio-backend/app/Tasks/generate_course.py">
+from typing import Optional, List, Dict
 import os
 import tempfile
 import re
 from celery import shared_task
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq 
+from langchain_ollama import ChatOllama
 from pydantic import BaseModel, Field
 from app.Model.TrainingContent import (
     Question, TrainingContent, Module, Article, Paragraph, 
     Slide, VoiceCover, EvaluationStatus, TotalEvaluation
 )
-import json
-from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+import time
+from langchain_core.output_parsers import StrOutputParser
 from app.Model.Training import Training
 from app.Model.enum.trainingStatus import trainingStatus
 from app.mocks.ml_mock import mock_score_predictor
@@ -16511,29 +17075,44 @@ from app.Model.enum.proficiencyLevelInitialQuestions import proficiencyLevelInit
 from app.routes.dispatcher import push_to_org
 from app.routes.dispatcherEm import push_to_em
 from gtts import gTTS
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableLambda
 import cloudinary
 import cloudinary.uploader
 from mdtopptx import parse_markdown, create_ppt
 
+# --- SCHEMAS ---
+class Component(BaseModel):
+    name: str = Field(description="The component extracted as a single word.")
+    is_output: bool = Field(description="True if this component is generated as an output, False otherwise.")
+    has_connections: bool = Field(description="True if this component connects to any other component.")
+
+class Connection(BaseModel):
+    source_component: str = Field(description="The single-word name of the origin component.")
+    target_component: str = Field(description="The single-word name of the destination component.")
+    relationship: str = Field(description="The text-form description of how they interconnect.")
+
+class ParagraphAnalysis(BaseModel):
+    components: List[Component] = Field(
+        description="List of all identified components in this specific paragraph."
+    )
+    connections: List[Connection] = Field(
+        description="List of all interconnections between components in this paragraph."
+    )
+    needs_diagram: bool = Field(
+        default=False, # <--- ADD THIS DEFAULT
+        description="True ONLY if there is at least one connection between components in this paragraph."
+    )
+    mermaid_code: Optional[str] = Field(
+        default=None,  # <--- ADD THIS DEFAULT
+        description="Valid Mermaid.js graph code (e.g., graph TD). Generate ONLY if needs_diagram is True."
+    )
 class QuizQuestionSchema(BaseModel):
-    # Minor tweak: changed 'questions' to 'question' for better JSON semantics, but either works.
-    question: str = Field(
-        description="The text of the evaluation question."
-    )
-    answerChoices: list[str] = Field(
-        description="An array of 4 possible answer strings."
-    )
-    correctAnswer: int = Field(
-        description="The integer index (0-based) of the correct answer within the answerChoices array."
-    )
+    question: str = Field(description="The text of the evaluation question.")
+    answerChoices: list[str] = Field(description="An array of 4 possible answer strings.")
+    correctAnswer: int = Field(description="The integer index (0-based) of the correct answer within the answerChoices array.")
     
 class EvaluationTestSchema(BaseModel):
-    test_questions: list[QuizQuestionSchema] = Field(
-        description="A list of multiple-choice questions for the end-of-module evaluation."
-    )   
-#for the course outline
+    test_questions: list[QuizQuestionSchema] = Field(description="A list of multiple-choice questions for the end-of-module evaluation.")   
+
 class ModuleOutlineSchema(BaseModel):
     name: str = Field(description="The title of the training module.")
     description: str = Field(description="A brief description of the module's content.")
@@ -16541,24 +17120,8 @@ class ModuleOutlineSchema(BaseModel):
 class CourseOutlineSchema(BaseModel):
     title: str = Field(description="The official, professional title of the course.")
     overview: str = Field(description="A clear summary of the course objectives.")
-    modules: list[ModuleOutlineSchema] = Field(
-        max_length=2, 
-        description="An array of up to 2 modules covering the required skills."
-    )
+    modules: list[ModuleOutlineSchema] = Field(max_length=2, description="An array of up to 2 modules covering the required skills.")
 
-     
-
-#to create articles
-# class singleParagraph(BaseModel):
-#     paragraph: str = Field(description="Paragraph of the article")
-# class singleArticle(BaseModel):
-#     articleTitle: str = Field(description="Title of the article")
-#     paragraphs: list[singleParagraph] = Field(max_length=2,description="Holds many paragraphs related to the article title")
-# class allArticles(BaseModel):
-#     articles: list[singleArticle] = Field(max_length=2,description="All articles generated by AI")
-
-
-#to create articles
 class singleArticle(BaseModel):
     articleTitle: str = Field(description="Title of the article")
     paragraphs: list[str] = Field(max_length=2, description="List of paragraphs related to the article title")
@@ -16566,148 +17129,165 @@ class singleArticle(BaseModel):
 class allArticles(BaseModel):
     articles: list[singleArticle] = Field(max_length=2, description="All articles generated by AI")
 
-
-#to create the final end module questions
 class ModuleQuestionSchema(BaseModel):
     question: str = Field(description="The text of the evaluation question.")
-    answerChoices: list[str] = Field(
-        min_length=4, 
-        max_length=4, 
-        description="An array of exactly 4 possible answer strings."
-    )
-    correctAnswer: int = Field(
-        description="The integer index (0-based) of the correct answer within the answerChoices array."
-    )
+    answerChoices: list[str] = Field(min_length=4, max_length=4, description="An array of exactly 4 possible answer strings.")
+    correctAnswer: int = Field(description="The integer index (0-based) of the correct answer within the answerChoices array.")
 
 class ModuleEvaluationSchema(BaseModel):
-    evaluationQuestions: list[ModuleQuestionSchema] = Field(
-        min_length=10,
-        max_length=10,
-        description="A list of exactly 10 multiple-choice questions for the module."
-    )
+    evaluationQuestions: list[ModuleQuestionSchema] = Field(min_length=10, max_length=10, description="A list of exactly 10 multiple-choice questions for the module.")
 
+
+# --- HELPER FUNCTIONS ---
+def invoke_with_fallback(chain_builder, prompt_args, max_tokens, model_name, initial_llm, step_name="AI Task"):
+    """Invoke a LangChain chain with exponential-backoff retries."""
+    max_retries = 5
+    base_wait = 3.0
+
+    last_exc = None
+    for attempt in range(max_retries):
+        try:
+            chain = chain_builder(initial_llm)
+            return chain.invoke(prompt_args)
+        except Exception as e:
+            last_exc = e
+            wait_time = base_wait * (2 ** attempt)
+            print(f"[{step_name}] Attempt {attempt + 1}/{max_retries} failed: {repr(e)}. Retrying in {wait_time:.0f}s...", flush=True)
+            time.sleep(wait_time)
+
+    raise Exception(f"[{step_name}] All {max_retries} retry attempts failed.") from last_exc
+
+
+# --- TASKS ---
 @shared_task(bind=True)
-def generate_initial_questions(self, target_skills: list[str], role: str,employeeID: str, organizationID:str):
+def generate_initial_questions(self, target_skills: list[str], role: str, employeeID: str, organizationID: str):
     try:
-        # 1. Use local variables instead of 'self.llm'
-        api_key = os.getenv('GROQ_KEY')
-        model_name = os.getenv('GROQ_MODEL', "qwen/qwen3-32b")
-        llm = ChatGroq(temperature=0.2,max_tokens=4096, model_name=model_name, api_key=api_key,max_retries=5)
-
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+        model_name = os.getenv('OLLAMA_MODEL', 'gpt-oss:120b')
+        max_tokens = int(os.getenv('MAX_TOKENS', '4096'))
+        api_key = os.getenv('OLLAMA_API_KEY', '')
         
-        # 2. Refined prompt for clarity
-        create_initial_questions_prompt = ChatPromptTemplate.from_template(
-            "Create 5 diagnostic multiple-choice questions for these skills: {target_skills}. The target employee role is: {role}."
+        llm = ChatOllama(
+            model=model_name,
+            base_url=ollama_url,
+            temperature=0.2,
+            num_predict=max_tokens,
+            **(({"headers": {"Authorization": f"Bearer {api_key}"}}) if api_key else {})
         )
         
-        initial_questions_chain = create_initial_questions_prompt | llm.with_structured_output(EvaluationTestSchema)
+        create_initial_questions_prompt = ChatPromptTemplate.from_template(
+            "Create 5 diagnostic multiple-choice questions for these skills: {target_skills}. The target employee role is: {role}.\n\n"
+            "CRITICAL: You MUST output raw JSON using exactly this structure and these exact key names:\n"
+            "{{\n"
+            "  \"test_questions\": [\n"
+            "    {{\n"
+            "      \"question\": \"string\",\n"
+            "      \"answerChoices\": [\"string\", \"string\", \"string\", \"string\"],\n"
+            "      \"correctAnswer\": 0\n"
+            "    }}\n"
+            "  ]\n"
+            "}}"
+        )
         
-        #Create the test
-        generated_test = initial_questions_chain.invoke({
-            "target_skills": ", ".join(target_skills), 
-            "role": role
-        })
-        #access the created initial data
+        generated_test = invoke_with_fallback(
+            lambda _llm: create_initial_questions_prompt | _llm.with_structured_output(EvaluationTestSchema),
+            {
+                "target_skills": ", ".join(target_skills), 
+                "role": role
+            },
+            max_tokens, model_name, llm, step_name="Initial Questions"
+        )
+        
         all_questions = generated_test.test_questions
-        #data saving part
         allInitialQuestions = []
-        for index, item in enumerate(all_questions):
-            question_text = item.question
-            choices = item.answerChoices
-            correct_idx = item.correctAnswer
-
-            #access choices one by one
+        for item in all_questions:
             newQuestion = Question(
-                questions=question_text,
-                answerChoices=choices,
-                correctAnswer=correct_idx
+                questions=item.question,
+                answerChoices=item.answerChoices,
+                correctAnswer=item.correctAnswer
             )
             allInitialQuestions.append(newQuestion)
-        newTraining = TrainingContent(
-            initialQuestions=allInitialQuestions
-        )    
+            
+        newTraining = TrainingContent(initialQuestions=allInitialQuestions)    
         saved_training = newTraining.save()
-        #get the previous train if available
+        
         previousTrain = Training.objects(employeeID=employeeID)
-        if previousTrain:
-            predictedScore = mock_score_predictor()
-        else:
-            predictedScore = 0.5    
+        predictedScore = mock_score_predictor() if previousTrain else 0.5    
+        
         newParentTraining = Training(
             employeeID=employeeID,
-            growth = 0.0,
-            performanceIncrease = 0.0,
-            trainingStatus = trainingStatus.PENDING,
-            trainingContentID = str(saved_training.id),
-
-            trainingPassStatus = False,
-            extractedNewSkillsInModeule = [],
-            predictedFinalScore = predictedScore,
-            organizationID = organizationID
+            growth=0.0,
+            performanceIncrease=0.0,
+            trainingStatus=trainingStatus.PENDING,
+            trainingContentID=str(saved_training.id),
+            trainingPassStatus=False,
+            extractedNewSkillsInModeule=[],
+            predictedFinalScore=predictedScore,
+            organizationID=organizationID
         )
         newParentTraining.save()
+        
         message = {
-            "status":"success",
-            "type":"AI",
-            "message":"Initial questions are created",
-            "additionalData":generated_test.model_dump()
+            "status": "success",
+            "type": "AI",
+            "message": "Initial questions are created",
+            "additionalData": generated_test.model_dump()
         }
-        print(f"DEBUG: [TASK] Task generate_initial_questions finished for Org {organizationID}. Pushing message type: {message['type']}", flush=True)
-        # 4. Return the parsed JSON dictionary
-        push_to_org(organizationID,message)#push to channel
+        print(f"DEBUG: [TASK] Task generate_initial_questions finished for Org {organizationID}.", flush=True)
+        push_to_org(organizationID, message)
         return generated_test.model_dump()
 
     except Exception as exc:
-        # If the API times out or fails to return valid JSON, retry in 5 seconds
-        self.retry(exc=exc, countdown=5, max_retries=3)
+        self.retry(exc=exc, countdown=5, max_retries=0)
+
 
 @shared_task(bind=True)
 def create_course(self, contentID: str, role: str, target_skills: list[str], proficiencyLevel: proficiencyLevelInitialQuestions, employeeID: str):
     try:
-        # Convert string to enum if necessary (for Celery serialization)
         if isinstance(proficiencyLevel, str):
             proficiencyLevel = proficiencyLevelInitialQuestions(proficiencyLevel)
             
-        api_key = os.getenv('GROQ_KEY')
-        model_name = os.getenv('GROQ_MODEL', "qwen/qwen3-32b")
-        llm = ChatGroq(temperature=0.2,max_tokens=4096, model_name=model_name, api_key=api_key,max_retries=5)
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'https://ollama.com')
+        model_name = os.getenv('OLLAMA_MODEL', 'gpt-oss:120b')
+        max_tokens = int(os.getenv('MAX_TOKENS', '4096'))
+        api_key = os.getenv('OLLAMA_API_KEY', '')
+        
+        llm = ChatOllama(
+            model=model_name,
+            base_url=ollama_url,
+            temperature=0.2,
+            num_predict=max_tokens,
+            **(({"headers": {"Authorization": f"Bearer {api_key}"}}) if api_key else {})
+        )
 
-        # create the outline + module outlines
         create_base_course_outline = ChatPromptTemplate.from_template(
             "You are an expert corporate instructional designer. "
             "Design a training course for a {role} focusing on these target skills: {target_skills}. "
             "CRITICAL: The content complexity must be strictly tailored for a learner with a {proficiency_level} proficiency level. "
-            "Provide a course title, a brief overview, and an outline of exactly 2 modules."
+            "Provide a course title, a brief overview, and an outline of exactly 2 modules.\n\n"
+            "CRITICAL: You MUST output raw JSON using exactly this structure and these exact key names:\n"
+            "{{\n"
+            "  \"title\": \"string\",\n"
+            "  \"overview\": \"string\",\n"
+            "  \"modules\": [\n"
+            "    {{\n"
+            "      \"name\": \"string\",\n"
+            "      \"description\": \"string\"\n"
+            "    }}\n"
+            "  ]\n"
+            "}}"
         )
 
-        course_chain = create_base_course_outline | llm.with_structured_output(CourseOutlineSchema)
-        generated_course = course_chain.invoke({
-            "target_skills": ", ".join(target_skills),
-            "role": role,
-            "proficiency_level": proficiencyLevel.value
-        })
-        # create the articles for each modules
-        # create_article_prompt = ChatPromptTemplate.from_template(
-        #     "You are an expert technical writer. Create detailed educational articles for a training module.\n"
-        #     "Module Name: {module_name}\n"
-        #     "Module Description: {module_description}\n"
-        #     "Target Audience Proficiency: {proficiency_level}\n\n"
-        #     "CRITICAL INSTRUCTIONS:\n"
-        #     "1. Write up to 2 articles covering this module.\n"
-        #     "2. Each article must have up to 2 distinct paragraphs.\n"
-        #     "3. Keep the content strictly aligned with the module description and tailored to the proficiency level.\n"
-        #     "4. Return a single, properly formatted JSON array of objects. Do not prematurely close the array brackets."
-        # )
+        generated_course = invoke_with_fallback(
+            lambda _llm: create_base_course_outline | _llm.with_structured_output(CourseOutlineSchema),
+            {
+                "target_skills": ", ".join(target_skills),
+                "role": role,
+                "proficiency_level": proficiencyLevel.value
+            },
+            max_tokens, model_name, llm, step_name="Course Outline"
+        )
 
-        # Create the parser
-        article_parser = JsonOutputParser(pydantic_object=allArticles)
-        # NEW: Helper function to strip <think> blocks from reasoning models
-        def strip_think_tags(text: str) -> str:
-            # Remove the <think>...</think> block and everything inside it
-            cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
-            return cleaned.strip()
-
-        # create the articles for each modules
         create_article_prompt = ChatPromptTemplate.from_template(
             "You are an expert technical writer. Create detailed educational articles for a training module.\n"
             "Module Name: {module_name}\n"
@@ -16717,21 +17297,17 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             "1. Write up to 2 articles covering this module.\n"
             "2. Each article must have up to 2 distinct paragraphs.\n"
             "3. Keep the content strictly aligned with the module description and tailored to the proficiency level.\n\n"
-            "{format_instructions}"
-        )
-        
-        # Chain uses the parser instead of with_structured_output
-        # article_chain = create_article_prompt | llm | article_parser
-        article_chain = (
-            create_article_prompt 
-            | llm 
-            | StrOutputParser() 
-            | RunnableLambda(strip_think_tags) 
-            | article_parser
+            "CRITICAL: You MUST output raw JSON using exactly this structure and these exact key names:\n"
+            "{{\n"
+            "  \"articles\": [\n"
+            "    {{\n"
+            "      \"articleTitle\": \"string\",\n"
+            "      \"paragraphs\": [\"string\", \"string\"]\n"
+            "    }}\n"
+            "  ]\n"
+            "}}"
         )
 
-        # article_chain = create_article_prompt | llm.with_structured_output(allArticles)
-        # create slides md code
         create_slides_md_prompt = ChatPromptTemplate.from_template(
             "You are an expert presentation designer. Create a slide deck presentation for a training module.\n"
             "Module Name: {module_name}\n"
@@ -16744,10 +17320,7 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             "4. Create 3 to 4 content slides. Use '##' for content slide titles.\n"
             "5. Use standard bullet points ('-') for the body text. Keep bullets concise (max 15 words)."
         )
-        # need to extract the raw test from the AI response
-        string_parser = StrOutputParser()
-        slides_md_chain = create_slides_md_prompt | llm | string_parser
-        # create evaluation questions
+
         create_module_eval_prompt = ChatPromptTemplate.from_template(
             "You are an expert technical assessor. Create an end-of-module evaluation quiz.\n"
             "Module Name: {module_name}\n"
@@ -16757,107 +17330,115 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             "1. Generate exactly 10 multiple-choice questions.\n"
             "2. The questions must strictly test the concepts covered in the module description.\n"
             "3. The technical depth and vocabulary must perfectly match the {proficiency_level} proficiency level.\n"
-            "4. Ensure there is only one unambiguous correct answer per question."
+            "4. Ensure there is only one unambiguous correct answer per question.\n\n"
+            "CRITICAL: You MUST output raw JSON using exactly this structure and these exact key names:\n"
+            "{{\n"
+            "  \"evaluationQuestions\": [\n"
+            "    {{\n"
+            "      \"question\": \"string\",\n"
+            "      \"answerChoices\": [\"string\", \"string\", \"string\", \"string\"],\n"
+            "      \"correctAnswer\": 0\n"
+            "    }}\n"
+            "  ]\n"
+            "}}"
         )
-        module_eval_chain = create_module_eval_prompt | llm.with_structured_output(ModuleEvaluationSchema)
         
-        # data assemble part in each module
         all_db_modules = []
         for module in generated_course.modules:
-            # Invoke the article chain for the current module
-            # generated_articles_data = article_chain.invoke({
-            #     "module_name": module.name,
-            #     "module_description": module.description,
-            #     "proficiency_level": proficiencyLevel.value
-            # })
-
-            # Invoke the article chain with the required format_instructions
-            # raw_articles_dict = article_chain.invoke({
-            #     "module_name": module.name,
-            #     "module_description": module.description,
-            #     "proficiency_level": proficiencyLevel.value,
-            #     "format_instructions": article_parser.get_format_instructions()
-            # })
-
-            # # Convert the dictionary back to the Pydantic model
-            # generated_articles_data = allArticles(**raw_articles_dict)
-
-            # # Prepare Articles for DB (Leave this exactly as you have it)
-            # db_articles = []
-            # for art in generated_articles_data.articles:
-            #     db_paragraphs = [Paragraph(paragraph=p) for p in art.paragraphs]
-            #     db_articles.append(Article(articleTitle=art.articleTitle, paragraphs=db_paragraphs))
-
-            # 1. Generate RAW text from the LLM (No LangChain parsers)
-            raw_text = (create_article_prompt | llm | StrOutputParser()).invoke({
-                "module_name": module.name,
-                "module_description": module.description,
-                "proficiency_level": proficiencyLevel.value,
-                "format_instructions": article_parser.get_format_instructions()
-            })
-
-            # 2. Clean the <think> blocks
-            cleaned_text = re.sub(r'<think>.*?</think>', '', raw_text, flags=re.DOTALL).strip()
+            time.sleep(2) 
             
-            # 3. Strip Markdown JSON fences if the LLM added them
-            if "```" in cleaned_text:
-                match = re.search(r'```(?:json)?(.*?)```', cleaned_text, flags=re.DOTALL)
-                if match:
-                    cleaned_text = match.group(1).strip()
-            
-            # 4. Parse the JSON manually
-            try:
-                raw_articles_dict = json.loads(cleaned_text)
-            except json.JSONDecodeError:
-                # If it fails, raise an error with the exact text so Celery can retry
-                raise ValueError(f"LLM generated invalid JSON format: {cleaned_text}")
+            # 1. Native Structured Output for Articles
+            generated_articles_data = invoke_with_fallback(
+                lambda _llm: create_article_prompt | _llm.with_structured_output(allArticles),
+                {
+                    "module_name": module.name,
+                    "module_description": module.description,
+                    "proficiency_level": proficiencyLevel.value
+                },
+                max_tokens, model_name, llm, step_name="Article Generation"
+            )
 
-            # 5. Prevent NoneType unpack errors
-            if not raw_articles_dict:
-                raw_articles_dict = {"articles": []}
+            system_instructions = \
+"""You are a technical extraction system. Analyze the provided paragraph from the article.
+Follow this exact algorithm for THIS PARAGRAPH ONLY:
+1. Identify components (outputs or non-outputs) mentioned in the text. Extract them as single words.
+2. Determine if these components have interconnections or common characteristics within this specific paragraph.
+3. Classify each component's output status (True/False).
+4. Match each component against others to map interconnections in text form (source, target, relationship).
+5. If ANY interconnections exist, set needs_diagram to True and generate valid Mermaid.js flowchart code using the extracted connections.
 
-            # 6. Convert back to Pydantic model
-            generated_articles_data = allArticles(**raw_articles_dict)
+CRITICAL: You MUST output raw JSON using exactly this structure and these exact key names. Do NOT use markdown code fences.
+{{
+  "components": [{{"name": "string", "is_output": true, "has_connections": true}}],
+  "connections": [{{"source_component": "string", "target_component": "string", "relationship": "string"}}],
+  "needs_diagram": true,
+  "mermaid_code": "string or null"
+}}"""
 
-            #check whether there is a need to create graphs or an illustration for each articles: check whether there are any components that are mentioned as a set of output without any interconnection, set of output with a set of interconnection or just components which are not an outputs
-            #in the generated article which may have an interconnection between those components alongside with a common characteristics amoung them. 
-            #if yes --> get those components as single words, get the interconnection (or not), get the output status of those objects (outputs of not)
-            # create the mermaid code if only, any form of objects (output or not) with an interconnection. 
-            # #match each object word agaist the other words and get the interconnection at text form. 
-            # #then create the mermaid code with those data.  
+            paragraph_eval_prompt = ChatPromptTemplate.from_messages([
+                ("system", system_instructions),
+                ("human", "Article Title: {articleTitle}\n\nParagraph Content:\n{paragraph}")
+            ])
 
-            # Prepare Articles for DB (Leave exactly as is)
             db_articles = []
             for art in generated_articles_data.articles:
-                db_paragraphs = [Paragraph(paragraph=p) for p in art.paragraphs]
-                db_articles.append(Article(articleTitle=art.articleTitle, paragraphs=db_paragraphs))
+                db_paragraphs = []
+                for p_text in art.paragraphs:
+                    time.sleep(1.5)
+                    try:
+                        # 2. Native Structured Output for Paragraph Eval
+                        evalData = invoke_with_fallback(
+                            lambda _llm: paragraph_eval_prompt | _llm.with_structured_output(ParagraphAnalysis),
+                            {
+                                "articleTitle": art.articleTitle,
+                                "paragraph": p_text
+                            },
+                            max_tokens, model_name, llm, step_name="Paragraph Analysis"
+                        )
+                    except Exception as parse_err:
+                        print(f"[Paragraph Analysis] Failed: {repr(parse_err)}", flush=True)
+                        evalData = ParagraphAnalysis(
+                            components=[], connections=[],
+                            needs_diagram=False, mermaid_code=None
+                        )
+                    
+                    db_paragraphs.append(Paragraph(
+                        paragraph=p_text,
+                        components=[comp.model_dump() for comp in evalData.components],
+                        connections=[conn.model_dump() for conn in evalData.connections],
+                        has_diagram=evalData.needs_diagram,
+                        mermaid_diagram=evalData.mermaid_code if evalData.needs_diagram else None
+                    ))
+                    
+                db_articles.append(Article(
+                    articleTitle=art.articleTitle, 
+                    paragraphs=db_paragraphs
+                ))
 
+            # 3. Standard Text Output for Slides (Needs Markdown, not JSON)
+            time.sleep(2) 
+            generated_markdown_string = invoke_with_fallback(
+                lambda _llm: create_slides_md_prompt | _llm | StrOutputParser(),
+                {
+                    "module_name": module.name,
+                    "module_description": module.description,
+                    "proficiency_level": proficiencyLevel.value
+                },
+                max_tokens, model_name, llm, step_name="Slides Generation"
+            )
 
-            # Prepare Articles for DB
-            # db_articles = []
-            # for art in generated_articles_data.articles:
-            #     db_paragraphs = [Paragraph(paragraph=p.paragraph) for p in art.paragraphs]
-            #     db_articles.append(Article(articleTitle=art.articleTitle, paragraphs=db_paragraphs))
-
-            # Prepare Articles for DB
-            # db_articles = []
-            # for art in generated_articles_data.articles:
-            #     # 'p' is now directly a string, not an object with a .paragraph property
-            #     db_paragraphs = [Paragraph(paragraph=p) for p in art.paragraphs]
-            #     db_articles.append(Article(articleTitle=art.articleTitle, paragraphs=db_paragraphs))
-
-            # invoke the slides creator chain
-            generated_markdown_string = slides_md_chain.invoke({
-                "module_name": module.name,
-                "module_description": module.description,
-                "proficiency_level": proficiencyLevel.value
-            })
-            # invoke the evaluation questions
-            eval_data = module_eval_chain.invoke({
-                "module_name": module.name,
-                "module_description": module.description,
-                "proficiency_level": proficiencyLevel.value
-            })
+            # 4. Native Structured Output for Evaluation Questions
+            time.sleep(2) 
+            eval_data = invoke_with_fallback(
+                lambda _llm: create_module_eval_prompt | _llm.with_structured_output(ModuleEvaluationSchema),
+                {
+                    "module_name": module.name,
+                    "module_description": module.description,
+                    "proficiency_level": proficiencyLevel.value
+                },
+                max_tokens, model_name, llm, step_name="Module Evaluation"
+            )
+            
             db_evaluation_questions = []
             for q in eval_data.evaluationQuestions:
                 new_db_question = Question(
@@ -16867,12 +17448,12 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
                 )
                 db_evaluation_questions.append(new_db_question)
             
-            # prepare the slides file and upload to cloudinary
+            # --- Presentation & Media Generation ---
             safe_module_name = re.sub(r'[^a-zA-Z0-9_]', '_', module.name)
             output_filename = os.path.join(tempfile.gettempdir(), f"module_{safe_module_name}_{contentID}_slides.pptx")
             
             parsed_slides = parse_markdown(generated_markdown_string)
-            total_slide_count = len(parsed_slides)  # get the slide count
+            total_slide_count = len(parsed_slides)
             create_ppt(parsed_slides, output_filename)
             
             upload_result = cloudinary.uploader.upload(
@@ -16883,44 +17464,33 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             )
             cloud_slide_url = upload_result.get("secure_url")
 
-            
             local_audio_files = []
             voice_covers_data = []
-            # create voices for each slide and save them
+            
             for index, slide in enumerate(parsed_slides):
                 slide_number = index + 1
-                
-                # Handle cases where slide might be a tuple or a dict
                 if isinstance(slide, dict):
                     title_text = slide.get('title', '')
-                    
-                    # Safely unpack tuples if the dict format also contains them
                     raw_content = slide.get('content', [])
                     clean_text = [str(item[-1]) if isinstance(item, tuple) else str(item) for item in raw_content]
                     body_text = ". ".join(clean_text)
-
                 elif isinstance(slide, (list, tuple)) and len(slide) >= 2:
                     title_text = str(slide[0])
-                    
                     if isinstance(slide[1], list):
-                        # Unpack the tuple to grab the actual text (which is the last item)
                         clean_text = [str(item[-1]) if isinstance(item, tuple) else str(item) for item in slide[1]]
                         body_text = ". ".join(clean_text)
                     else:
-                        # Fallback if slide[1] is just a single string or unexpected format
                         body_text = str(slide[1])
-                        
                 else:
                     continue
 
                 script_text = f"{title_text}. {body_text}"
-
-                # If the slide is empty, skip audio generation
                 if not script_text.strip():
                     continue
-                tts = gTTS(text=script_text, lang='en', slow=False)  # create the audio
+                    
+                tts = gTTS(text=script_text, lang='en', slow=False) 
                 audio_filename = os.path.join(tempfile.gettempdir(), f"slide_{slide_number}_{contentID}.mp3")
-                tts.save(audio_filename)  # save file (mp3)
+                tts.save(audio_filename) 
                 local_audio_files.append(audio_filename)
                 audio_upload = cloudinary.uploader.upload(
                     audio_filename, 
@@ -16932,13 +17502,11 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
                     "voiceFileLink": audio_upload.get("secure_url")
                 })
             
-            # Prepare VoiceCovers for DB
             db_voice_covers = [
                 VoiceCover(slideNumber=vc['slideNumber'], voiceFileLink=vc['voiceFileLink']) 
                 for vc in voice_covers_data
             ]
             
-            # Prepare Slide object
             db_slide = Slide(
                 slideName=f"{module.name} Presentation",
                 slideLink=cloud_slide_url,
@@ -16946,7 +17514,6 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
                 voiceCovers=db_voice_covers
             )
 
-            # Initialize Evaluation Status with None/Defaults
             db_eval_status = EvaluationStatus(
                 passedStatus=None,
                 passLimit=None,
@@ -16956,7 +17523,6 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
                 totalQuestions=len(db_evaluation_questions)
             )
 
-            # Assemble Module
             db_module = Module(
                 moduleTitle=module.name,
                 moduleDescription=module.description,
@@ -16967,15 +17533,12 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             )
             all_db_modules.append(db_module)
 
-            # remove the slides file
             if os.path.exists(output_filename):
                 os.remove(output_filename)
-            # remove audio files
             for audio_file in local_audio_files:
                 if os.path.exists(audio_file):
                     os.remove(audio_file)    
         
-        # Final data adding - Update the TrainingContent document
         training_doc = TrainingContent.objects(id=contentID).first()
         if training_doc:
             training_doc.update(
@@ -16989,18 +17552,17 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
                     totalMrksPercent=None
                 )
             )
-        #send notification
+
         message = {
-            "status":"success",
-            "type":"AI",
-            "message":"Complete course is created"
+            "status": "success",
+            "type": "AI",
+            "message": "Complete course is created"
         }
-        push_to_em(employeeID,message)
+        push_to_em(employeeID, message)
         return {"status": "success", "contentID": contentID}
 
     except Exception as exc:
-        # If the API times out or fails to return valid JSON, retry in 5 seconds
-        self.retry(exc=exc, countdown=5, max_retries=2)
+        self.retry(exc=exc, countdown=5, max_retries=0)
 </file>
 
 </files>

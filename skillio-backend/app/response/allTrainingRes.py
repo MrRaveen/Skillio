@@ -109,6 +109,7 @@ class TrainingRes(BaseModel):
     predictedFinalScore: float
     content: Optional[TrainingContentRes] = None
     employeeID: str
+    practiceMidTestsCount:int
     employeeName: str
     employeeRoleName: str
     employeeDepartmentName:str

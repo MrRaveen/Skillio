@@ -12,5 +12,6 @@ class Training(db.Document):
     trainingPassStatus = db.BooleanField()
     extractedNewSkillsInModeule = db.ListField(db.StringField())
     predictedFinalScore = db.FloatField()
+    practiceMidTestsCount = db.IntField()
 
     organizationID = db.StringField()

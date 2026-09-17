@@ -861,6 +861,7 @@ def startTraining(decorated_data):
         target_skills = data.get('target_skills')
         role = data.get('role')
         employeeID = data.get('employeeID')
+        practiceMidTestsCount=data.get('practiceMidTestsCount')
         
         if not all([target_skills, role, employeeID]):
             return jsonify({
@@ -869,7 +870,7 @@ def startTraining(decorated_data):
             }), 400
 
         orgAccID = decorated_data.get('id')
-        task = generate_initial_questions.delay(target_skills, role, employeeID, orgAccID)
+        task = generate_initial_questions.delay(target_skills, role, employeeID, orgAccID,practiceMidTestsCount)
         # task = mock_ai_training_task.delay(orgAccID)
         return jsonify({
             "status": "success",

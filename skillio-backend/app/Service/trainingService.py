@@ -142,7 +142,8 @@ def getAllTrainingData(orgID: str):
                 employeeRoleName=employeeRoleName,
                 employeeDepartmentName=employeeDepartmentName,
                 employeeSkills=allSkillNames,
-                employeeTeamName=employeeTeamName
+                employeeTeamName=employeeTeamName,
+                practiceMidTestsCount=train.practiceMidTestsCount or 0
             )
             response_list.append(newRes.model_dump())
             
