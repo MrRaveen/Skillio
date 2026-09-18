@@ -1,0 +1,138 @@
+/** 
+* Paste one or more documents here
+*/
+{
+  "initialQuestions": [
+    {
+      "questions": "What is the primary purpose of the useEffect hook in React?",
+      "answerChoices": [
+        "To manage component state",
+        "To handle user input events",
+        "To perform side effects in functional components",
+        "To render UI elements"
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "questions": "In TypeScript, which keyword is used to define a reusable type that can be referenced in multiple places?",
+      "answerChoices": [
+        "interface",
+        "type",
+        "enum",
+        "class"
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "questions": "Which Tailwind CSS class would you use to apply a responsive flexbox layout that only takes effect on large screens and above?",
+      "answerChoices": [
+        "flex",
+        "lg:flex",
+        "md:flex",
+        "xl:flex"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "questions": "In React, what is the primary restriction when passing props to child components?",
+      "answerChoices": [
+        "Props must be functions",
+        "Props are mutable and can be changed by child components",
+        "Props are read-only and cannot be modified by child components",
+        "Props must be primitive values"
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "questions": "In TypeScript, what is the inferred type of a variable declared as const count = 42?",
+      "answerChoices": [
+        "any",
+        "number",
+        "unknown",
+        "string"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+    "modules": []
+}
+
+
+
+
+
+const Dashboard => {
+  let a = 0
+  return (
+    <div>test</div>
+  )
+}
+
+/**
+ * 🚀 EXPLAINING API REQUESTS (GET vs POST)
+ * Think of an API like a waiter in a restaurant:
+ * - GET: You ask for the menu (Fetching information).
+ * - POST: You give your order to the waiter (Sending information).
+ */
+
+// 1. THE GET REQUEST (Retrieve Data)
+// Purpose: Use this when you want to "GET" something from the database.
+
+const getEmployees = async () => {
+  try {
+    // By default, apiCall uses 'GET' if you don't specify a method
+    const response = await apiCall('/employees');
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      console.log("Here is the list of employees:", result.data);
+    }
+  } catch (error) {
+    console.error("The GET request failed:", error);
+  }
+};
+
+
+// 2. THE POST REQUEST (Send/Create Data)
+// Purpose: Use this when you want to "POST" (send) new data to the server.
+let a = {
+  "tet": "test",
+  "hihhh": "nknkn",
+  "knknn": 10
+}
+const addNewEmployee = async () => {
+  const newEmployeeData = {
+    name: "John Doe",
+    role: "Software Engineer",
+    email: "john@example.com"
+  };
+
+  try {
+    const response = await apiCall('/employee-manage', {
+      method: 'POST', // You MUST specify 'POST'
+      body: JSON.stringify(newEmployeeData), // Data must be turned into a string
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      alert("Employee added successfully!");
+    }
+  } catch (error) {
+    console.error("The POST request failed:", error);
+  }
+};
+
+/**
+ * 💡 KEY DIFFERENCES:
+ * 
+ * GET: 
+ * - No 'body' allowed.
+ * - Used for reading.
+ * - Like looking at a profile.
+ * 
+ * POST: 
+ * - Has a 'body' containing your data.
+ * - Used for creating/updating.
+ * - Like submitting a sign-up form.
+ */
