@@ -373,6 +373,10 @@ def finalEvalCal(trainingContID: str,trainingID: str):
         if trainingBase:
             from app.Model.enum.trainingStatus import trainingStatus
             trainingBase.trainingStatus = trainingStatus.FINISHED
+            if passModuleLimitCount == actualPassedModuleCount:
+                trainingBase.trainingPassStatus = True
+            else:
+                trainingBase.trainingPassStatus = False
             trainingBase.save()
         
         return {
