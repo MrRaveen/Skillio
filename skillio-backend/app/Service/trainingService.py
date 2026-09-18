@@ -152,3 +152,113 @@ def getAllTrainingData(orgID: str):
     except Exception as e:
         print(f"Error in getAllTrainingData: {str(e)}")
         raise e
+
+def getAllTrainingDataPerEmployee(orgID: str):
+    from app.response.employeeTrainingStatsRes import (
+        InitialQuestionEvalRes, ModuleEvaluationRes, ModuleStatRes,
+        TotalEvaluationRes, TrainingStatRes, EmployeeTrainingStatsRes
+    )
+    try:
+        employees = Employee.objects(companyAccID=orgID)
+        response_list = []
+
+        for emp in employees:
+            emp_id_str = str(emp.id)
+            email = emp.email
+            emp_name = emp.employeeName or "N/A"
+            
+            trainings = Training.objects(employeeID=emp_id_str)
+            
+            allTrainingsCount = len(trainings)
+            passedCount = 0
+            pendingCount = 0
+            failedCount = 0
+            
+            allTrainingsRes = []
+            
+            for train in trainings:
+                training_status = train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus)
+                
+                if training_status.lower() == 'finished':
+                    if train.trainingPassStatus:
+                        passedCount += 1
+                    else:
+                        failedCount += 1
+                else:
+                    pendingCount += 1
+                    
+                content_obj = TrainingContent.objects(id=train.trainingContentID).first() if train.trainingContentID else None
+                
+                initial_eval_res = None
+                total_eval_res = None
+                module_stats = []
+                
+                if content_obj:
+                    # initial questions eval
+                    if hasattr(content_obj, 'initialQuestionEvaluation') and content_obj.initialQuestionEvaluation:
+                        eval_data = content_obj.initialQuestionEvaluation
+                        initial_eval_res = InitialQuestionEvalRes(
+                            isInitialQuestionPerformed=True,
+                            initialQuestionMarks=int(eval_data.initialQuestionMarks) if eval_data.initialQuestionMarks is not None else 0,
+                            initialQuestionMarksPercent=int(eval_data.initialQuestionMarksPercent) if eval_data.initialQuestionMarksPercent is not None else 0,
+                            totalQuestions=eval_data.totalQuestions if eval_data.totalQuestions is not None else 0,
+                            correctedCount=eval_data.correctedCount if eval_data.correctedCount is not None else 0
+                        )
+                    else:
+                        initial_eval_res = InitialQuestionEvalRes(isInitialQuestionPerformed=False)
+                        
+                    # modules
+                    if content_obj.modules:
+                        for mod in content_obj.modules:
+                            mod_eval_res = None
+                            if mod.evaluationStatus:
+                                mod_eval_res = ModuleEvaluationRes(
+                                    passedStatus=mod.evaluationStatus.passedStatus or False,
+                                    passLimit=int(mod.evaluationStatus.passLimit) if mod.evaluationStatus.passLimit is not None else 0,
+                                    obtainedMarks=int(mod.evaluationStatus.obtainedMarks) if mod.evaluationStatus.obtainedMarks is not None else 0,
+                                    totalCorrectedCount=mod.evaluationStatus.totalCorrectedCount or 0,
+                                    obtainedMarksPrecent=int(mod.evaluationStatus.obtainedMarksPrecent) if mod.evaluationStatus.obtainedMarksPrecent is not None else 0,
+                                    totalQuestions=mod.evaluationStatus.totalQuestions or 0
+                                )
+                            module_stats.append(ModuleStatRes(
+                                moduleName=mod.moduleTitle or "Unknown",
+                                moduleEvaluations=mod_eval_res
+                            ))
+                            
+                    # total evaluation
+                    if content_obj.totalEvaluation:
+                        tot_eval = content_obj.totalEvaluation
+                        total_eval_res = TotalEvaluationRes(
+                            passModuleLimitCount=tot_eval.passModuleLimitCount or 0,
+                            actualPassedModuleCount=tot_eval.actualPassedModuleCount or 0,
+                            totalMarks=int(tot_eval.totalMarks) if tot_eval.totalMarks is not None else 0,
+                            totalMrksPercent=int(tot_eval.totalMrksPercent) if tot_eval.totalMrksPercent is not None else 0
+                        )
+
+                training_stat = TrainingStatRes(
+                    trainingID=str(train.id),
+                    trainingPassStatus=train.trainingPassStatus or False,
+                    trainingStatus=training_status,
+                    initialQuestionEval=initial_eval_res,
+                    modules=module_stats,
+                    totalEvaluation=total_eval_res
+                )
+                allTrainingsRes.append(training_stat)
+                
+            emp_stat_res = EmployeeTrainingStatsRes(
+                employeeID=emp_id_str,
+                email=email,
+                employeeName=emp_name,
+                allTrainingsCount=allTrainingsCount,
+                passedCount=passedCount,
+                pendingCount=pendingCount,
+                failedCount=failedCount,
+                allTrainings=allTrainingsRes
+            )
+            response_list.append(emp_stat_res.model_dump())
+            
+        return response_list
+
+    except Exception as e:
+        print(f"Error in getAllTrainingDataPerEmployee: {str(e)}")
+        raise e

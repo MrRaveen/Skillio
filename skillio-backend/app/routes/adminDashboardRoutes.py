@@ -900,6 +900,23 @@ def getAllTraining(decorated_data):
             "message": str(e)
         }), 500
 
+@adminDashboardRoutes.route('/get-all-training-per-employee', methods=['GET'])
+@token_required
+def getAllTrainingPerEmployee(decorated_data):
+    try:
+        orgID = decorated_data.get('id')
+        from app.Service.trainingService import getAllTrainingDataPerEmployee
+        trainings_per_employee = getAllTrainingDataPerEmployee(orgID)
+        return jsonify({
+            "status": "success",
+            "data": trainings_per_employee
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "failed",
+            "message": str(e)
+        }), 500
+
 @adminDashboardRoutes.route('/generate-signature', methods=['GET'])
 def generate_signature():
     # 1. Generate a timestamp (signatures are valid for 1 hour by default)
