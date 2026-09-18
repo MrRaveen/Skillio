@@ -1,0 +1,342 @@
+'use client';
+import React, { useState, useRef } from 'react';
+import { ArrowRight, Building2, MapPin, Globe, Upload, ArrowLeft, ShieldCheck, Mail, Phone, Lock, X, Check } from 'lucide-react';
+import { Button, Input, Card } from './Ui/Components';
+import { CompanyDetails, CompanyAddress } from '../types';
+
+interface OnboardingFlowProps {
+  onComplete: (details: CompanyDetails) => void;
+  onCancel: () => void;
+}
+
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onCancel }) => {
+  const [step, setStep] = useState(1);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>('');
+  
+  const [formData, setFormData] = useState<CompanyDetails>({
+    name: '',
+    size: '',
+    industry: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: ''
+    },
+    website: '',
+    companyContact: '',
+    personalContact: '',
+    companyEmail: '',
+    accountEmail: '',
+    ownerEmail: '',
+    password: ''
+  });
+
+  const handleNext = () => setStep(s => s + 1);
+  const handleBack = () => setStep(s => s - 1);
+
+  const handleChange = (field: keyof CompanyDetails, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddressChange = (field: keyof CompanyAddress, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFileName(file.name);
+    }
+  };
+
+  const handleSubmit = () => {
+    onComplete(formData);
+  };
+
+  return (
+    <div className="min-h-screen bg-mesh-color flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Decorative AI background elements */}
+      <div className="absolute inset-0 bg-dot-grid pointer-events-none"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-primary-300/20 rounded-full blur-3xl mix-blend-multiply animate-blob"></div>
+      <div className="absolute bottom-20 right-10 w-72 h-72 bg-indigo-300/20 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-2000"></div>
+
+      <div className="relative z-10">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8 text-center">
+           <div className="flex justify-center mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/30">
+                <Building2 className="h-7 w-7" />
+              </div>
+           </div>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            {step === 1 && "Tell us about your company"}
+            {step === 2 && "Contact & Security"}
+            {step === 3 && "Where are you located?"}
+            {step === 4 && "Finalize setup"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Step {step} of 4
+          </p>
+        </div>
+
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <Card className="px-4 py-8 sm:px-10 shadow-xl border-slate-200/60 backdrop-blur-sm bg-white/80 ring-1 ring-slate-200/50">
+            {/* Step 1: Company Info */}
+            {step === 1 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
+                <Input 
+                  label="Company Name" 
+                  placeholder="Acme Inc." 
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                />
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Company Size</label>
+                  <select 
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    value={formData.size}
+                    onChange={(e) => handleChange('size', e.target.value)}
+                  >
+                    <option value="">Select size...</option>
+                    <option value="1-10">1-10 employees</option>
+                    <option value="11-50">11-50 employees</option>
+                    <option value="51-200">51-200 employees</option>
+                    <option value="201+">201+ employees</option>
+                  </select>
+                </div>
+                <Input 
+                  label="Industry" 
+                  placeholder="Software, Healthcare, etc."
+                  value={formData.industry}
+                  onChange={(e) => handleChange('industry', e.target.value)}
+                />
+                <div className="pt-4 flex items-center gap-3">
+                  <Button variant="ghost" onClick={onCancel} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleNext} className="flex-1" disabled={!formData.name || !formData.size}>
+                    Continue <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Contact & Security (New) */}
+            {step === 2 && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300">
+                <div className="grid grid-cols-1 gap-4">
+                  <Input 
+                    label="Company Email" 
+                    type="email"
+                    placeholder="info@company.com"
+                    value={formData.companyEmail}
+                    onChange={(e) => handleChange('companyEmail', e.target.value)}
+                  />
+                  <Input 
+                    label="Company Contact" 
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={formData.companyContact}
+                    onChange={(e) => handleChange('companyContact', e.target.value)}
+                  />
+                </div>
+
+                <div className="relative pt-2 pb-2">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-2 text-xs text-slate-400">Owner & Account</span>
+                  </div>
+                </div>
+
+                <Input 
+                  label="Owner Email" 
+                  type="email"
+                  placeholder="owner@company.com"
+                  value={formData.ownerEmail}
+                  onChange={(e) => handleChange('ownerEmail', e.target.value)}
+                />
+                <div className="grid grid-cols-1 gap-4">
+                  <Input 
+                    label="Personal Contact" 
+                    type="tel"
+                    placeholder="+1 (555) 999-9999"
+                    value={formData.personalContact}
+                    onChange={(e) => handleChange('personalContact', e.target.value)}
+                  />
+                  <Input 
+                    label="Account Email" 
+                    type="email"
+                    placeholder="admin@company.com"
+                    value={formData.accountEmail}
+                    onChange={(e) => handleChange('accountEmail', e.target.value)}
+                  />
+                </div>
+                <Input 
+                  label="Owner Password" 
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                />
+
+                <div className="pt-4 flex items-center gap-3">
+                  <Button variant="ghost" onClick={onCancel} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
+                    Cancel
+                  </Button>
+                  <Button variant="outline" onClick={handleBack}>
+                    Back
+                  </Button>
+                  <Button onClick={handleNext} className="flex-1">
+                    Continue <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Address (Formerly Step 2) */}
+            {step === 3 && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300">
+                <Input 
+                  label="Street Address" 
+                  placeholder="123 Innovation Dr"
+                  value={formData.address.street}
+                  onChange={(e) => handleAddressChange('street', e.target.value)}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Input 
+                    label="City" 
+                    placeholder="San Francisco"
+                    value={formData.address.city}
+                    onChange={(e) => handleAddressChange('city', e.target.value)}
+                  />
+                  <Input 
+                    label="State / Province" 
+                    placeholder="CA"
+                    value={formData.address.state}
+                    onChange={(e) => handleAddressChange('state', e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input 
+                    label="Zip / Postal Code" 
+                    placeholder="94105"
+                    value={formData.address.zipCode}
+                    onChange={(e) => handleAddressChange('zipCode', e.target.value)}
+                  />
+                  <Input 
+                    label="Country" 
+                    placeholder="United States"
+                    value={formData.address.country}
+                    onChange={(e) => handleAddressChange('country', e.target.value)}
+                  />
+                </div>
+
+                <div className="relative pt-2">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-2 text-xs text-slate-400">Online Presence</span>
+                  </div>
+                </div>
+
+                <Input 
+                  label="Website URL" 
+                  placeholder="https://example.com"
+                  value={formData.website}
+                  onChange={(e) => handleChange('website', e.target.value)}
+                />
+                <div className="pt-4 flex items-center gap-3">
+                  <Button variant="ghost" onClick={onCancel} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
+                    Cancel
+                  </Button>
+                  <Button variant="outline" onClick={handleBack}>
+                    Back
+                  </Button>
+                  <Button onClick={handleNext} className="flex-1">
+                    Continue <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Finalize (Formerly Step 3) */}
+            {step === 4 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
+                 <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Upload Company Logo</label>
+                  <div 
+                    onClick={handleFileClick}
+                    className="mt-1 flex justify-center rounded-lg border border-dashed border-slate-300 px-6 py-10 hover:bg-slate-50 transition-colors cursor-pointer group"
+                  >
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleFileChange}
+                    />
+                    <div className="text-center">
+                      {selectedFileName ? (
+                        <>
+                           <div className="mx-auto h-12 w-12 text-primary-500 flex items-center justify-center">
+                             <Check className="h-8 w-8" />
+                           </div>
+                           <p className="mt-2 text-sm text-slate-900 font-medium">{selectedFileName}</p>
+                           <p className="text-xs text-slate-500">Click to change</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mx-auto h-12 w-12 text-slate-300 group-hover:text-primary-500 transition-colors" />
+                          <div className="mt-4 flex text-sm text-slate-600">
+                            <span className="relative cursor-pointer rounded-md font-medium text-primary-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 hover:text-primary-500">
+                              Upload a file
+                            </span>
+                            <p className="pl-1">or drag and drop</p>
+                          </div>
+                          <p className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <input type="checkbox" id="terms" className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"/>
+                    <label htmlFor="terms" className="text-sm text-slate-600">I agree to the Terms and Privacy Policy</label>
+                </div>
+
+                <div className="pt-4 flex items-center gap-3">
+                  <Button variant="ghost" onClick={onCancel} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
+                    Cancel
+                  </Button>
+                  <Button variant="outline" onClick={handleBack}>
+                    Back
+                  </Button>
+                  <Button onClick={handleSubmit} className="flex-1">
+                    Complete Setup
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};

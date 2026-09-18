@@ -1,0 +1,179 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+import { LandingPage } from './Components/LandingPage';
+import { OnboardingFlow } from './Components/OnboardingFlow';
+import { Dashboard } from './Components/Dashboard';
+import { LoginScreen } from './Components/LoginScreen';
+import { Card, Button, Input } from './Components/Ui/Components';
+import { AppView, CompanyDetails, PlanTier } from './types';
+import { CheckCircle, Loader2, Mail } from 'lucide-react';
+
+const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<AppView>(AppView.LANDING);
+  const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanTier | null>(null);
+
+  // --- Handlers ---
+  const startOnboarding = () => setCurrentView(AppView.ONBOARDING);
+  
+  const startLogin = () => setCurrentView(AppView.LOGIN);
+
+  const handleCancel = () => {
+    setCompanyDetails(null);
+    setCurrentView(AppView.LANDING);
+  };
+
+  const finishOnboarding = (details: CompanyDetails) => {
+    setCompanyDetails(details);
+    setCurrentView(AppView.VERIFICATION);
+  };
+
+  const verifyEmail = () => {
+    // Simulate API call
+    setTimeout(() => {
+      setCurrentView(AppView.PLAN_SELECTION);
+    }, 1500);
+  };
+
+  const selectPlan = (plan: PlanTier) => {
+    setSelectedPlan(plan);
+    setCurrentView(AppView.DASHBOARD);
+  };
+
+  const handleLoginSubmit = (type: 'company' | 'employee', email: string) => {
+    // Mock a company for direct login (bypassing onboarding)
+    const mockCompany: CompanyDetails = {
+        name: type === 'company' ? 'Acme Corp' : 'Acme Corp (Employee View)',
+        size: '51-200',
+        industry: 'Technology',
+        address: { street: '123 Tech Blvd', city: 'San Francisco', state: 'CA', zipCode: '94105', country: 'USA' },
+        website: 'https://acme.com',
+        companyContact: '555-0123',
+        personalContact: '555-0124',
+        companyEmail: 'contact@acme.com',
+        accountEmail: email,
+        ownerEmail: 'owner@acme.com',
+        password: ''
+    };
+    setCompanyDetails(mockCompany);
+    setCurrentView(AppView.DASHBOARD);
+  };
+
+  const logout = () => {
+    setCompanyDetails(null);
+    setSelectedPlan(null);
+    setCurrentView(AppView.LANDING);
+  };
+
+  // --- Verification Screen Component (Inline for simplicity) ---
+  const VerificationScreen = () => {
+    const [status, setStatus] = useState<'sending' | 'sent' | 'verifying'>('sending');
+    const [verificationCode, setVerificationCode] = useState('');
+
+    useEffect(() => {
+      const t1 = setTimeout(() => setStatus('sent'), 800);
+      return () => clearTimeout(t1);
+    }, []);
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-mesh-color p-4 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 bg-dot-grid pointer-events-none"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-200/20 rounded-full blur-3xl animate-blob"></div>
+
+        <Card className="max-w-md w-full p-8 text-center shadow-xl border-slate-200/60 backdrop-blur-sm bg-white/80 relative z-10 ring-1 ring-slate-200">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-50 mb-6">
+            {status === 'sending' ? (
+              <Loader2 className="h-8 w-8 text-primary-600 animate-spin" />
+            ) : (
+              <Mail className="h-8 w-8 text-primary-600" />
+            )}
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Check your email</h2>
+          <p className="text-slate-600 mb-6">
+            We've sent a verification link to <strong>admin@{companyDetails?.website?.replace('https://', '').replace('www.', '') || 'company.com'}</strong>.
+          </p>
+          
+          <div className="mb-6">
+             <Input 
+               placeholder="Enter verification code" 
+               value={verificationCode}
+               onChange={(e) => setVerificationCode(e.target.value)}
+               className="text-center text-lg tracking-widest"
+             />
+          </div>
+
+          <div className="space-y-3">
+            <Button 
+              onClick={() => { setStatus('verifying'); verifyEmail(); }} 
+              className="w-full py-2.5 shadow-lg shadow-primary-500/20"
+              disabled={status === 'verifying'}
+            >
+              {status === 'verifying' ? (
+                <>
+                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...
+                </>
+              ) : 'I verified my email'}
+            </Button>
+            <Button variant="ghost" className="w-full text-slate-500">Resend email</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
+  // --- Plan Selection Component (Inline) ---
+  const PlanSelectionScreen = () => (
+    <div className="min-h-screen bg-mesh-color py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 bg-dot-grid pointer-events-none"></div>
+      
+      <div className="relative z-10">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Select your plan</h2>
+          <p className="mt-4 text-lg text-slate-600">Your 14-day free trial starts now.</p>
+        </div>
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 pb-12">
+           {[PlanTier.STARTER, PlanTier.GROWTH, PlanTier.ENTERPRISE].map((tier) => (
+             <Card key={tier} className={`p-8 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 hover:ring-2 hover:ring-primary-500 hover:ring-offset-2 duration-300 backdrop-blur-sm bg-white/80 ${selectedPlan === tier ? 'ring-2 ring-primary-500' : 'ring-1 ring-slate-200 border-0'}`}>
+                <h3 className="text-xl font-bold text-slate-900 capitalize">{tier.toLowerCase()}</h3>
+                <div className="mt-4 mb-6">
+                  {tier === PlanTier.STARTER && <span className="text-4xl font-extrabold text-slate-900">$0</span>}
+                  {tier === PlanTier.GROWTH && <span className="text-4xl font-extrabold text-slate-900">$49</span>}
+                  {tier === PlanTier.ENTERPRISE && <span className="text-4xl font-extrabold text-slate-900">Custom</span>}
+                  {tier !== PlanTier.ENTERPRISE && <span className="text-slate-500 ml-1">/mo</span>}
+                </div>
+                <Button 
+                  variant={tier === PlanTier.GROWTH ? 'primary' : 'outline'} 
+                  className={`w-full ${tier === PlanTier.GROWTH ? 'shadow-lg shadow-primary-500/20' : ''}`}
+                  onClick={() => selectPlan(tier)}
+                >
+                  Select Plan
+                </Button>
+             </Card>
+           ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- Render Logic ---
+  switch (currentView) {
+    case AppView.LANDING:
+      return <LandingPage onGetStarted={startOnboarding} onLogin={startLogin} />;
+    case AppView.LOGIN:
+      return <LoginScreen onLogin={handleLoginSubmit} onCancel={handleCancel} />;
+    case AppView.ONBOARDING:
+      return <OnboardingFlow onComplete={finishOnboarding} onCancel={handleCancel} />;
+    case AppView.VERIFICATION:
+      return <VerificationScreen />;
+    case AppView.PLAN_SELECTION:
+      return <PlanSelectionScreen />;
+    case AppView.DASHBOARD:
+      return <Dashboard companyDetails={companyDetails!} onLogout={logout} />;
+    default:
+      return <div>Error: Unknown View</div>;
+  }
+};
+
+export default App;
