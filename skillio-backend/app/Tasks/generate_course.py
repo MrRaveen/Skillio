@@ -1,4 +1,4 @@
-from PracticeQuestions import PracticeQuestions
+from app.Model.PracticeQuestions import PracticeQuestions, QnAPair
 from typing import Optional, List, Dict
 import os
 import tempfile
@@ -27,8 +27,8 @@ from mdtopptx import parse_markdown, create_ppt
 # --- SCHEMAS ---
 class Component(BaseModel):
     name: str = Field(description="The component extracted as a single word.")
-    is_output: bool = Field(description="True if this component is generated as an output, False otherwise.")
-    has_connections: bool = Field(description="True if this component connects to any other component.")
+    is_output: bool = Field(default=False, description="True if this component is generated as an output, False otherwise.")
+    has_connections: bool = Field(default=False, description="True if this component connects to any other component.")
 
 class Connection(BaseModel):
     source_component: str = Field(description="The single-word name of the origin component.")
@@ -37,9 +37,11 @@ class Connection(BaseModel):
 
 class ParagraphAnalysis(BaseModel):
     components: List[Component] = Field(
+        default_factory=list,
         description="List of all identified components in this specific paragraph."
     )
     connections: List[Connection] = Field(
+        default_factory=list,
         description="List of all interconnections between components in this paragraph."
     )
     needs_diagram: bool = Field(
@@ -77,7 +79,7 @@ class testQuestionPair(BaseModel):
     question: str
     answer: str
 class AllTestQuestions(BaseModel):
-    testQSet: List[testQuestionPair] = Field(description="")
+    testQSet: List[List[testQuestionPair]] = Field(description="")
 class ModuleQuestionSchema(BaseModel):
     question: str = Field(description="The text of the evaluation question.")
     answerChoices: list[str] = Field(min_length=4, max_length=4, description="An array of exactly 4 possible answer strings.")
@@ -109,7 +111,7 @@ def invoke_with_fallback(chain_builder, prompt_args, max_tokens, model_name, ini
 
 # --- TASKS ---
 @shared_task(bind=True)
-def generate_initial_questions(self, target_skills: list[str], role: str, employeeID: str, organizationID: str,practiceMidTestsCount:int):
+def generate_initial_questions(self, target_skills: list[str], role: str, employeeID: str, organizationID: str,practiceMidTestsCount:int,questionCountForSet:int):
     try:
         ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
         model_name = os.getenv('OLLAMA_MODEL', 'gpt-oss:120b')
@@ -120,6 +122,7 @@ def generate_initial_questions(self, target_skills: list[str], role: str, employ
             model=model_name,
             base_url=ollama_url,
             temperature=0.2,
+            format="json",
             num_predict=max_tokens,
             **(({"headers": {"Authorization": f"Bearer {api_key}"}}) if api_key else {})
         )
@@ -173,7 +176,8 @@ def generate_initial_questions(self, target_skills: list[str], role: str, employ
             extractedNewSkillsInModeule=[],
             predictedFinalScore=predictedScore,
             organizationID=organizationID,
-            practiceMidTestsCount=practiceMidTestsCount
+            practiceMidTestsCount=practiceMidTestsCount,
+            questionCountForSet=questionCountForSet
         )
         newParentTraining.save()
         
@@ -270,20 +274,53 @@ def create_course(self, contentID: str, role: str, target_skills: list[str], pro
             "4. Create 3 to 4 content slides. Use '##' for content slide titles.\n"
             "5. Use standard bullet points ('-') for the body text. Keep bullets concise (max 15 words)."
         )
-        create_practice_tests_prompt = ChatPromptTemplate.from_template("")
-        trainingObj = Training.objects(trainingContentID=contentID)
-        if trainingObj:
+        create_practice_tests_prompt = ChatPromptTemplate.from_template(
+            "You are an expert technical assessor. Create practice questions and answers for a training course.\n"
+            "Course Title: {course_title}\n"
+            "Course Overview: {course_overview}\n"
+            "Modules: {modules_info}\n"
+            "Target Audience Proficiency: {proficiency_level}\n\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "1. Generate exactly {practiceMidTestsCount} separate SETS of practice questions.\n"
+            "2. Each set must contain exactly {questionCountForSet} questions and answers.\n"
+            "3. The questions must test the concepts covered in the course modules.\n"
+            "4. The technical depth must match the {proficiency_level} proficiency level.\n\n"
+            "CRITICAL: You MUST output raw JSON using exactly this structure and these exact key names. Notice that testQSet is a list of lists:\n"
+            "{{\n"
+            "  \"testQSet\": [\n"
+            "    [\n"
+            "      {{\n"
+            "        \"question\": \"string\",\n"
+            "        \"answer\": \"string\"\n"
+            "      }}\n"
+            "    ]\n"
+            "  ]\n"
+            "}}"
+        )
+        trainingObj = Training.objects(trainingContentID=contentID).first()
+        questionCountForSet = trainingObj.questionCountForSet
+        if trainingObj and trainingObj.practiceMidTestsCount and trainingObj.practiceMidTestsCount > 0:
+            modules_info = "\n".join([f"- {m.name}: {m.description}" for m in generated_course.modules])
             testQuestionsRes = invoke_with_fallback(
                 lambda _llm: create_practice_tests_prompt | _llm.with_structured_output(AllTestQuestions),
                 {
-                    "practiceMidTestsCount": trainingObj.practiceMidTestsCount
+                    "practiceMidTestsCount": trainingObj.practiceMidTestsCount,
+                    "questionCountForSet": questionCountForSet,
+                    "course_title": generated_course.title,
+                    "course_overview": generated_course.overview,
+                    "modules_info": modules_info,
+                    "proficiency_level": proficiencyLevel.value
                 },
                 max_tokens, model_name, llm, step_name="Practice question generation"
             )
-            extractePQ = testQuestionsRes.testQSet
+            extractedPQ = testQuestionsRes.testQSet
+            qna_list = [
+                [QnAPair(question=q.question, ans=q.answer) for q in qs]
+                for qs in extractedPQ
+            ]
             newPracticeQuestion = PracticeQuestions(
-                allQuestions = extractePQ,
-                trainingID = trainingObj.id
+                allQuestions = qna_list,
+                trainingID = str(trainingObj.id)
             )
             newPracticeQuestion.save()
         create_module_eval_prompt = ChatPromptTemplate.from_template(
@@ -453,30 +490,30 @@ CRITICAL: You MUST output raw JSON using exactly this structure and these exact 
                 if not script_text.strip():
                     continue
                     
-                tts = gTTS(text=script_text, lang='en', slow=False) 
-                audio_filename = os.path.join(tempfile.gettempdir(), f"slide_{slide_number}_{contentID}.mp3")
-                tts.save(audio_filename) 
-                local_audio_files.append(audio_filename)
-                audio_upload = cloudinary.uploader.upload(
-                    audio_filename, 
-                    resource_type="video", 
-                    folder=f"skillio/courses/{contentID}/audio"
-                )
-                voice_covers_data.append({
-                    "slideNumber": str(slide_number),
-                    "voiceFileLink": audio_upload.get("secure_url")
-                })
+                # tts = gTTS(text=script_text, lang='en', slow=False) 
+                # audio_filename = os.path.join(tempfile.gettempdir(), f"slide_{slide_number}_{contentID}.mp3")
+                # tts.save(audio_filename) 
+                # local_audio_files.append(audio_filename)
+                # audio_upload = cloudinary.uploader.upload(
+                #     audio_filename, 
+                #     resource_type="video", 
+                #     folder=f"skillio/courses/{contentID}/audio"
+                # )
+                # voice_covers_data.append({
+                #     "slideNumber": str(slide_number),
+                #     "voiceFileLink": audio_upload.get("secure_url")
+                # })
             
-            db_voice_covers = [
-                VoiceCover(slideNumber=vc['slideNumber'], voiceFileLink=vc['voiceFileLink']) 
-                for vc in voice_covers_data
-            ]
+            # db_voice_covers = [
+            #     VoiceCover(slideNumber=vc['slideNumber'], voiceFileLink=vc['voiceFileLink']) 
+            #     for vc in voice_covers_data
+            # ]
             
             db_slide = Slide(
                 slideName=f"{module.name} Presentation",
                 slideLink=cloud_slide_url,
                 totSlideCount=total_slide_count,
-                voiceCovers=db_voice_covers
+                voiceCovers=None
             )
 
             db_eval_status = EvaluationStatus(

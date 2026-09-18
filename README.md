@@ -204,11 +204,20 @@ celery -A celery_worker.celery_app worker --loglevel=info
 windows
 celery -A celery_worker.celery_app worker --loglevel=info --pool=solo
 
+or 
+
+celery -A celery_worker.celery_app worker --loglevel=info --pool=gevent --concurrency=4 -E
+
 ```
 
 ### Step 3.1: reset the worker
 ```bash
 celery -A celery_worker.celery_app purge
+```
+### Step 3.2: Flower
+```bash
+$env:FLOWER_UNAUTHENTICATED_API="true"
+celery -A celery_worker.celery_app flower
 ```
 
 ### Step 4: Stripe Webhook Forwarding

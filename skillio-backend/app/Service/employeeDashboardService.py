@@ -1,3 +1,4 @@
+from app.Model.PracticeQuestions import PracticeQuestions
 from app.Model.Employee import Employee
 from app.jwt_utils import encode_employee_auth_token
 
@@ -126,6 +127,14 @@ def getAllTrainingData(employeeID: str):
                     totalEvaluation=content_obj.totalEvaluation.to_mongo().to_dict() if content_obj.totalEvaluation else None,
                     initialQuestionEvaluation=eval_dict
                 )
+            practiceQuestionsDoc = PracticeQuestions.objects(trainingID=str(train.id)).first()
+            practice_sets_data = None
+            if practiceQuestionsDoc:
+                qs_list = []
+                for qs in practiceQuestionsDoc.allQuestions:
+                    set_list = [{"question": q.question, "answer": q.ans} for q in qs]
+                    qs_list.append(set_list)
+                practice_sets_data = {"allQuestions": qs_list}
 
             newRes = TrainingRes(
                 id=str(train.id),
@@ -143,7 +152,8 @@ def getAllTrainingData(employeeID: str):
                 employeeDepartmentName=employeeDepartmentName,
                 employeeSkills=allSkillNames,
                 employeeTeamName=employeeTeamName,
-                practiceMidTestsCount=train.practiceMidTestsCount or 0
+                practiceMidTestsCount=train.practiceMidTestsCount or 0,
+                trainingPracticeQuestionSets=practice_sets_data
             )
             response_list.append(newRes.model_dump())
             

@@ -13,5 +13,6 @@ class Training(db.Document):
     extractedNewSkillsInModeule = db.ListField(db.StringField())
     predictedFinalScore = db.FloatField()
     practiceMidTestsCount = db.IntField()
+    questionCountForSet = db.IntField()
 
     organizationID = db.StringField()

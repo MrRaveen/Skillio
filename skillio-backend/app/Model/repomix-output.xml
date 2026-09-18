@@ -1,0 +1,401 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+DefinedSkill.py
+Department.py
+Employee.py
+EmployeeRole.py
+EmployeeTeam.py
+enum/companyIndustry.py
+enum/companySize.py
+enum/employeeRole.py
+enum/proficiencyLevelInitialQuestions.py
+enum/trainingStatus.py
+OrganizationAccount.py
+Plan.py
+Training.py
+TrainingContent.py
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="DefinedSkill.py">
+from app import db
+
+class DefinedSkill(db.Document):
+    meta = {'collection': 'definedSkills'}
+
+    skill_name = db.StringField()
+    skill_des = db.StringField()
+    companyAccID = db.StringField()
+</file>
+
+<file path="Department.py">
+from app import db
+
+class Department(db.Document):
+    meta = {'collection': 'departments'}
+
+    deptName = db.StringField()
+    deptDescription = db.StringField()
+    companyAccID = db.StringField()
+</file>
+
+<file path="Employee.py">
+from app import db
+import datetime
+
+class Employee(db.Document):
+    meta = {'collection': 'employees'}
+
+    companyAccID = db.StringField()
+    employeeName = db.StringField()
+    employeeRoleID = db.StringField()
+    employeeDepartmentID = db.StringField()
+    teamID = db.StringField()
+    email = db.EmailField()
+    password = db.StringField()
+    contactnumber = db.StringField()
+    address = db.StringField()
+    profileImageUrl = db.StringField()
+</file>
+
+<file path="EmployeeRole.py">
+from app import db
+
+SKILL_LEVEL_CHOICES = ('low', 'medium', 'high', 'expert')
+
+class EmployeeRole(db.Document):
+    meta = {'collection': 'employeeRoles'}
+
+    roleName = db.StringField()
+    roleDescription = db.StringField()
+    roleSkillid = db.ListField(db.StringField())
+    skillLevel = db.StringField(choices=SKILL_LEVEL_CHOICES)
+    companyAccID = db.StringField()
+</file>
+
+<file path="EmployeeTeam.py">
+from app import db
+
+class EmployeeTeam(db.Document):
+    meta = {'collection': 'employeeTeams'}
+
+    teamName = db.StringField()
+    teamDes = db.StringField()
+    departmentID = db.StringField()
+    companyAccID = db.StringField()
+</file>
+
+<file path="enum/companyIndustry.py">
+import enum
+
+class companyIndustry(enum.Enum):
+    EDUCATION="Education"
+    MEDICAL="Medical"
+    IT="IT"
+    ENGINEERING="Engineering"
+</file>
+
+<file path="enum/companySize.py">
+import enum
+
+class companySize(enum.Enum):
+    SMALL="0-10"
+    MEDIUM="10-50"
+    HIGH="50-200"
+    VERY_HIGH="201+"
+</file>
+
+<file path="enum/employeeRole.py">
+import enum
+
+class employeeRole(enum.Enum):
+    MANAGER="Manager"
+    NORMAL="Normal"
+    DEVOPS="DevOps"
+    TECH_LEAD="Tech Lead"
+</file>
+
+<file path="enum/proficiencyLevelInitialQuestions.py">
+import enum
+
+class proficiencyLevelInitialQuestions(enum.Enum):
+    LOW="Low"
+    MEDIUM="Medium"
+    HIGH="High"
+</file>
+
+<file path="enum/trainingStatus.py">
+import enum
+
+class trainingStatus(enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    FINISHED = "finished"
+</file>
+
+<file path="OrganizationAccount.py">
+from app import db
+import datetime
+from app.Model.enum.companySize import companySize
+from app.Model.enum.companyIndustry import companyIndustry
+
+class PlanInformation(db.EmbeddedDocument):
+    planID = db.StringField()
+    subStartedDate = db.DateTimeField()
+
+class PaymentInformation(db.EmbeddedDocument):
+    planIDInternal = db.StringField()
+    stripe_customer_id = db.StringField()
+    stripe_subscription_id = db.StringField()
+    stripe_price_id = db.StringField()
+    stripe_subscription_status = db.StringField()
+    current_period_end = db.DateTimeField()
+    current_period_start = db.DateTimeField()
+
+class OrganizationAccount(db.Document):
+    meta = {'collection': 'organizationAccounts'}
+
+    accountStatus = db.BooleanField()
+    companyName = db.StringField()
+    companySize = db.EnumField(companySize)
+    companyIndustry = db.EnumField(companyIndustry)
+    companyEmail = db.EmailField()
+    contactNumber = db.StringField()
+    ownerEmail = db.EmailField()
+    personalNumber = db.StringField()
+    password = db.StringField()
+    address = db.StringField()
+    city = db.StringField()
+    state = db.StringField()
+    zipCode = db.StringField()
+    country = db.StringField()
+    companyWebsiteUrl = db.StringField()
+    companyLogoUrl = db.StringField()
+    companyBannerUrl = db.StringField()
+    planInformation = db.EmbeddedDocumentField(PlanInformation)
+    paymentInfo = db.EmbeddedDocumentField(PaymentInformation)
+</file>
+
+<file path="Plan.py">
+from app import db
+import datetime
+
+class Plan(db.Document):
+    meta = {'collection': 'plans'}
+    stripePriceID = db.StringField()
+    name = db.StringField()
+    description = db.StringField()
+    priceMonth = db.FloatField()
+    priceYear = db.FloatField()
+    features = db.ListField(db.StringField())
+    isPopular = db.BooleanField(default=False)
+</file>
+
+<file path="Training.py">
+from app import db
+from app.Model.enum.trainingStatus import trainingStatus
+
+class Training(db.Document):
+    meta = {'collection': 'training'}
+
+    employeeID = db.StringField()
+    growth = db.FloatField()#how much a difference made in terms of total percentage compared to previous training
+    performanceIncrease = db.FloatField()#performance increase when compared to past training
+    trainingStatus = db.EnumField(trainingStatus)
+    trainingContentID = db.StringField()
+    trainingPassStatus = db.BooleanField()
+    extractedNewSkillsInModeule = db.ListField(db.StringField())
+    predictedFinalScore = db.FloatField()
+
+    organizationID = db.StringField()
+</file>
+
+<file path="TrainingContent.py">
+from typing import Optional
+from app import db
+
+class Question(db.EmbeddedDocument):
+    questions = db.StringField()
+    answerChoices = db.ListField(db.StringField())
+    corretnessStatus = db.BooleanField()
+    userProvidedAnswer = db.IntField()
+    correctAnswer = db.IntField()
+
+class InitialQuestionEvaluation(db.EmbeddedDocument):
+    initialQuestionMarks = db.FloatField()
+    initialQuestionMarksPercent = db.FloatField()
+    totalQuestions = db.IntField()
+    correctedCount = db.IntField()
+
+class Paragraph(db.EmbeddedDocument):
+    paragraph = db.StringField()
+    components = db.ListField(db.DictField())
+    connections = db.ListField(db.DictField())
+    has_diagram = db.BooleanField(default=False)
+    mermaid_diagram = db.StringField()
+
+class Article(db.EmbeddedDocument):
+    articleTitle = db.StringField()
+    paragraphs = db.ListField(db.EmbeddedDocumentField(Paragraph))
+
+class VoiceCover(db.EmbeddedDocument):
+    slideNumber = db.StringField()
+    voiceFileLink = db.StringField()
+
+class Slide(db.EmbeddedDocument):
+    slideName = db.StringField()
+    slideLink = db.StringField()
+    totSlideCount = db.IntField()
+    voiceCovers = db.ListField(db.EmbeddedDocumentField(VoiceCover))
+
+class EvaluationStatus(db.EmbeddedDocument):
+    passedStatus = db.BooleanField()
+    passLimit = db.FloatField()
+    obtainedMarks = db.FloatField()
+    totalCorrectedCount = db.IntField()
+    obtainedMarksPrecent = db.FloatField()
+    totalQuestions = db.IntField()
+
+class Module(db.EmbeddedDocument):
+    moduleTitle = db.StringField()
+    moduleDescription = db.StringField()
+    articles = db.ListField(db.EmbeddedDocumentField(Article))
+    slides = db.ListField(db.EmbeddedDocumentField(Slide))
+    evaluationQuestions = db.ListField(db.EmbeddedDocumentField(Question))
+    evaluationStatus = db.EmbeddedDocumentField(EvaluationStatus)
+
+class TotalEvaluation(db.EmbeddedDocument):
+    passModuleLimitCount = db.IntField()
+    actualPassedModuleCount = db.IntField()
+    totalMarks = db.FloatField()
+    totalMrksPercent = db.FloatField()
+
+class TrainingContent(db.Document):
+    meta = {'collection': 'trainingContent'}
+
+    title = db.StringField()
+    overview = db.StringField()
+    initialQuestions = db.ListField(db.EmbeddedDocumentField(Question))
+    initialQuestionEvaluation = db.EmbeddedDocumentField(InitialQuestionEvaluation)
+    modules = db.ListField(db.EmbeddedDocumentField(Module))
+    totalEvaluation = db.EmbeddedDocumentField(TotalEvaluation)
+    companyAccID = db.StringField()
+
+"""sumary_line
+{
+  "title":"str",
+  "overview":"str",
+  "initialQuestions":[
+    {
+      "questions":"str",
+      "answerChoices":"string arr",
+      "corretnessStatus":"bool",
+      "userProvidedAnswer":"int",
+      "correctAnswer":"int"
+    }
+  ],
+  "initialQuestionEvaluation":{
+    "initialQuestionMarks":"double",
+    "initialQuestionMarksPercent":"double",
+    "totalQuestions":"int",
+    "correctedCount":"int"
+  },
+  "modules":[
+    {
+      "moduleTitle":"str",
+      "moduleDescription":"str",
+      "articles":[
+        {
+          "articleTitle":"str",
+          "paragraphs":[
+            {
+              "paragraph":"str"
+            }
+          ]
+        }
+      ],
+      "slides":[
+        {
+          "slideName":"str",
+          "slideLink":"str",
+          "totSlideCount":"int",
+          "voiceCovers":[
+            {
+              "slideNumber":"str",
+              "voiceFileLink":"str"
+            }
+          ]
+        }
+      ],
+      "evaluationQuestions":[
+        {
+          "questions":"str",
+          "answerChoices":"string arr",
+          "corretnessStatus":"bool",
+          "userProvidedAnswer":"int",
+          "correctAnswer":"int"
+        }
+      ],
+      "evaluationStatus":{
+        "passedStatus":"bool",
+        "passLimit":"double",
+        "obtainedMarks":"double",
+        "totalCorrectedCount":"int",
+        "obtainedMarksPrecent":"double",
+        "totalQuestions":"int"
+      }
+    }
+  ],
+  "totalEvaluation":{
+    "passModuleLimitCount":"int",
+    "actualPassedModuleCount":"int",
+    "totalMarks":"double",
+    "totalMrksPercent":"double"
+  }
+}
+"""
+</file>
+
+</files>

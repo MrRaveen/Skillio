@@ -97,6 +97,11 @@ class TrainingContentRes(BaseModel):
     modules: List[ModuleRes] = []
     totalEvaluation: Optional[dict] = None
     initialQuestionEvaluation: Optional[dict] = None
+class PracticeQuestionPair(BaseModel):
+  question:str
+  answer:str
+class TrainingPracticeQuestionSets(BaseModel):
+  allQuestions: List[List[PracticeQuestionPair]]
 
 class TrainingRes(BaseModel):
     id: str
@@ -108,6 +113,7 @@ class TrainingRes(BaseModel):
     extractedNewSkillsInModeule: List[str] = []
     predictedFinalScore: float
     content: Optional[TrainingContentRes] = None
+    trainingPracticeQuestionSets: Optional[TrainingPracticeQuestionSets] = None
     employeeID: str
     practiceMidTestsCount:int
     employeeName: str
