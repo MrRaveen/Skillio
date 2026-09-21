@@ -43,3 +43,4 @@ class EmployeeTrainingStatsRes(BaseModel):
     pendingCount: int
     failedCount: int
     allTrainings: List[TrainingStatRes] = []
+    regression: float
