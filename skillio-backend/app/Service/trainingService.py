@@ -175,19 +175,27 @@ def getAllTrainingDataPerEmployee(orgID: str):
             failedCount = 0
             
             allTrainingsRes = []
-            
+            sumTrainingCount = 0 #x
+            sumFinalMarksCount = 0 #y
+            sumXandY = 0#x*y sum
+            sumXSquare = 0
             for train in trainings:
                 training_status = train.trainingStatus.value if hasattr(train.trainingStatus, 'value') else str(train.trainingStatus)
+                
+                content_obj = TrainingContent.objects(id=train.trainingContentID).first() if train.trainingContentID else None
                 
                 if training_status.lower() == 'finished':
                     if train.trainingPassStatus:
                         passedCount += 1
                     else:
                         failedCount += 1
+                    sumTrainingCount = sumTrainingCount+1 
+                    sumFinalMarksCount = sumFinalMarksCount + content_obj.totalEvaluation.totalMrksPercent
+                    sumXandY = sumXandY + (sumTrainingCount * sumFinalMarksCount)
+                    sumXSquare = sumXSquare + (sumTrainingCount ** 2)
                 else:
                     pendingCount += 1
                     
-                content_obj = TrainingContent.objects(id=train.trainingContentID).first() if train.trainingContentID else None
                 
                 initial_eval_res = None
                 total_eval_res = None
@@ -244,7 +252,11 @@ def getAllTrainingDataPerEmployee(orgID: str):
                     totalEvaluation=total_eval_res
                 )
                 allTrainingsRes.append(training_stat)
-                
+            #regression cal
+            n = sumTrainingCount
+            upper = (n * sumXandY) - (sumTrainingCount * sumFinalMarksCount)
+            lower = (n * sumXSquare) - (sumTrainingCount ** 2)
+            m = upper / lower if lower != 0 else 0.0
             emp_stat_res = EmployeeTrainingStatsRes(
                 employeeID=emp_id_str,
                 email=email,
@@ -253,7 +265,8 @@ def getAllTrainingDataPerEmployee(orgID: str):
                 passedCount=passedCount,
                 pendingCount=pendingCount,
                 failedCount=failedCount,
-                allTrainings=allTrainingsRes
+                allTrainings=allTrainingsRes,
+                regression = m
             )
             response_list.append(emp_stat_res.model_dump())
             

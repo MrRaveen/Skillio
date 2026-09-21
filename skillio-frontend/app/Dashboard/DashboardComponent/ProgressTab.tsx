@@ -12,6 +12,7 @@ import {
   Clock,
   Mail,
   TrendingUp,
+  TrendingDown,
   XCircle,
   AlertTriangle,
   BarChart2,
@@ -75,6 +76,7 @@ interface EmployeeTrainingStat {
   pendingCount: number;
   failedCount: number;
   allTrainings: TrainingStat[];
+  regression?: number;
 }
 
 // --- Helpers ---
@@ -282,6 +284,21 @@ function EmployeeProgressCard({ emp }: { emp: EmployeeTrainingStat }) {
             <XCircle className="h-3.5 w-3.5 text-red-400" />
             <span className="text-xs font-black text-red-600">{emp.failedCount}</span>
           </div>
+          {emp.regression !== undefined && (
+            <div 
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border ${
+                emp.regression >= 0 
+                  ? 'bg-emerald-50 border-emerald-100 text-emerald-700' 
+                  : 'bg-red-50 border-red-100 text-red-700'
+              }`}
+              title={emp.regression >= 0 ? 'Performance Gain' : 'Performance Loss'}
+            >
+              {emp.regression >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <span className="text-[10px] font-black uppercase tracking-wider">
+                {emp.regression >= 0 ? '+' : '-'}{Math.abs(emp.regression).toFixed(2)}
+              </span>
+            </div>
+          )}
           {hasAnyNotPerformed && (
             <button
               onClick={e => { e.stopPropagation(); handleEmailClick(); }}
