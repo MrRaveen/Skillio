@@ -29,7 +29,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onCa
     companyContact: '',
     personalContact: '',
     companyEmail: '',
-    accountEmail: '',
     ownerEmail: '',
     password: ''
   });
@@ -176,13 +175,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onCa
                     placeholder="+1 (555) 999-9999"
                     value={formData.personalContact}
                     onChange={(e) => handleChange('personalContact', e.target.value)}
-                  />
-                  <Input 
-                    label="Account Email" 
-                    type="email"
-                    placeholder="admin@company.com"
-                    value={formData.accountEmail}
-                    onChange={(e) => handleChange('accountEmail', e.target.value)}
                   />
                 </div>
                 <Input 

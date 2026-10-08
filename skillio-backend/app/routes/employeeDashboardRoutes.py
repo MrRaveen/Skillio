@@ -378,3 +378,63 @@ def getSignedUrl(decordedData):
         "status": "error",
         "message": f"Error occurred getting signed URL: {str(e)}"
         }), 500
+
+@employeeDashboardRoutes.route('/documents', methods=['GET'])
+@token_required_employees
+def getEmployeeDocuments(decordedData):
+    """
+    Retrieve documents accessible to the authenticated employee.
+
+    Visibility rules applied in service layer:
+    - 'public'     -> always visible
+    - 'restricted' -> visible only when the employee's role has a DocumentAccess entry
+    - 'private'    -> visible only when the employee's role has a DocumentAccess entry
+
+    Response document shape:
+    {
+        "_id": str,
+        "documentName": str,
+        "documentDescription": str,
+        "uploadedUrl": str,
+        "timestamp": str (ISO),
+        "insertedBy": str,
+        "isMainCategory": bool,
+        "companyAccID": str,
+        "accessLevel": str,
+        "categories": {
+            "mainCat": { "name": str, "id": str },
+            "subCat":  { "name": str, "id": str } | null
+        }
+    }
+    """
+    try:
+        org_acc_id = decordedData.get("orgAccID")
+        role_id    = decordedData.get("role_id")
+
+        if not org_acc_id or not role_id:
+            return jsonify({
+                "status": "failed",
+                "message": "Token is missing orgAccID or role_id"
+            }), 401
+
+        from app.Service.documentManageService import getDocumentsForEmployee
+        documents = getDocumentsForEmployee(
+            companyAccID=org_acc_id,
+            roleID=role_id
+        )
+
+        return jsonify({
+            "status": "success",
+            "data": documents
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "failed",
+            "message": f"Unknown error occurred : {str(e)}"
+        }), 500
+
+@employeeDashboardRoutes.route('/ask-questions', methods=['GET'])
+@token_required_employees
+def askQuestions(decordedData):
+    pass

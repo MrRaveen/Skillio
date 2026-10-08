@@ -981,7 +981,7 @@ export default function SettingsTab({ userType }: { userType?: 'company' | 'empl
                                        <Badge variant="neutral">Level: {role.skillLevel}</Badge>
                                        {role.skillIds.slice(0, 3).map(sId => {
                                          const sName = skills.find(s => s.id === sId)?.name || 'Unknown Skill';
-                                         return <Badge key={sId} variant="primary">{sName}</Badge>;
+                                         return <Badge key={sId} variant="success">{sName}</Badge>;
                                        })}
                                        {role.skillIds.length > 3 && <span className="text-xs text-slate-400 py-1">+ {role.skillIds.length - 3} more</span>}
                                     </div>

@@ -232,7 +232,7 @@ interface TrainingRecord {
 }
 
 // --- Main Component ---
-export default function LearningPathTab() {
+export default function LearningPathTab({ setIsGlobalLoading }: { setIsGlobalLoading?: (loading: boolean) => void }) {
   const [trainings, setTrainings] = useState<TrainingRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userType, setUserType] = useState<string>('company');
@@ -301,7 +301,7 @@ export default function LearningPathTab() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
             <GraduationCap className="h-8 w-8 text-primary-600" />
-            Learning Paths
+            Training
           </h1>
           <p className="text-slate-500 mt-1">Master new skills with AI-driven personalized curriculum.</p>
         </div>
@@ -390,6 +390,7 @@ export default function LearningPathTab() {
           questions={activeAssessment.questions}
           onSuccess={fetchTrainings}
           onClose={() => setActiveAssessment(null)}
+          setIsGlobalLoading={setIsGlobalLoading}
         />
       )}
     </div>
@@ -804,14 +805,21 @@ function CourseView({
 
       {showFlashcards && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="relative w-full max-w-4xl bg-transparent flex flex-col h-[90vh] sm:h-auto sm:min-h-[600px]">
-            <button
-              onClick={() => setShowFlashcards(false)}
-              className="absolute top-0 right-0 sm:-top-4 sm:-right-4 h-10 w-10 bg-white hover:bg-slate-100 text-slate-500 rounded-full flex items-center justify-center transition-colors z-10 shadow-md"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="flex-1 overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-slate-800/90 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            {/* Header with title + close */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <BrainCircuit className="h-5 w-5 text-primary-400" />
+                Practice Flashcards
+              </h3>
+              <button
+                onClick={() => setShowFlashcards(false)}
+                className="h-8 w-8 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="overflow-y-auto">
               <FlashcardViewer questions={allFlashcards} />
             </div>
           </div>
@@ -1194,11 +1202,13 @@ function AssessmentView({
   questions,
   onSuccess,
   onClose,
+  setIsGlobalLoading,
 }: {
   trainingID: string;
   questions: Question[];
   onSuccess: () => void;
   onClose: () => void;
+  setIsGlobalLoading?: (loading: boolean) => void;
 }) {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1232,6 +1242,7 @@ function AssessmentView({
       if (res.ok) {
         onSuccess();
         onClose();
+        if (setIsGlobalLoading) setIsGlobalLoading(true);
       } else {
         console.error("Submission failed");
       }
@@ -1335,18 +1346,18 @@ function FlashcardViewer({ questions }: { questions: PracticeQuestionPair[] }) {
 
   const handleNext = () => {
     setIsFlipped(false);
-    setCurrentIndex((prev) => Math.min(prev + 1, questions.length - 1));
+    setTimeout(() => setCurrentIndex((prev) => Math.min(prev + 1, questions.length - 1)), 150);
   };
-  
+
   const handlePrev = () => {
     setIsFlipped(false);
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+    setTimeout(() => setCurrentIndex((prev) => Math.max(prev - 1, 0)), 150);
   };
 
   if (!questions || questions.length === 0) {
     return (
-      <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-200">
-        <p className="text-slate-400 font-bold">No flashcards available for this module.</p>
+      <div className="text-center py-20">
+        <p className="text-white/60 font-bold">No flashcards available for this module.</p>
       </div>
     );
   }
@@ -1354,53 +1365,85 @@ function FlashcardViewer({ questions }: { questions: PracticeQuestionPair[] }) {
   const currentQ = questions[currentIndex];
 
   return (
-    <div className="max-w-3xl mx-auto h-full flex flex-col justify-center animate-in fade-in slide-in-from-bottom-4 duration-500 py-12 px-4">
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-          <BrainCircuit className="h-6 w-6 text-primary-500" />
-          Practice Flashcards
-        </h3>
-        <Badge variant="neutral" className="bg-primary-50 text-primary-700 text-xs font-bold uppercase tracking-wider px-3 py-1">
-          {currentIndex + 1} of {questions.length}
-        </Badge>
+    <div className="flex flex-col px-6 pb-6 pt-4">
+      {/* Progress + badge */}
+      <div className="flex items-center justify-end mb-5">
+        <span className="text-xs font-black text-white/50 uppercase tracking-widest">
+          {currentIndex + 1} <span className="text-white/30">of</span> {questions.length}
+        </span>
       </div>
 
-      <div className="relative perspective-1000 w-full mb-8" style={{ minHeight: '350px' }}>
-        <div 
-          className={`w-full h-full absolute inset-0 cursor-pointer transition-all duration-300 transform-style-3d ${isFlipped ? 'bg-primary-600 text-white border-primary-600' : 'bg-white border-slate-200 hover:border-primary-300'} border-2 rounded-3xl p-10 flex flex-col items-center justify-center text-center shadow-lg hover:shadow-xl`}
+      {/* 3-D flip card */}
+      <style>{`
+        .fc-scene { perspective: 1200px; }
+        .fc-card {
+          position: relative;
+          width: 100%;
+          min-height: 280px;
+          transform-style: preserve-3d;
+          transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+          cursor: pointer;
+        }
+        .fc-card.flipped { transform: rotateY(180deg); }
+        .fc-face {
+          position: absolute;
+          inset: 0;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          border-radius: 1.25rem;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: flex-start;
+          padding: 2rem 2.25rem;
+          text-align: left;
+          overflow-y: auto;
+        }
+        .fc-front {
+          background: #ffffff;
+          border: 2px solid #e2e8f0;
+        }
+        .fc-back {
+          background: #c2185b;
+          transform: rotateY(180deg);
+        }
+      `}</style>
+
+      <div className="fc-scene mb-6" style={{ minHeight: '280px' }}>
+        <div
+          className={`fc-card ${isFlipped ? 'flipped' : ''}`}
           onClick={() => setIsFlipped(!isFlipped)}
         >
-          {!isFlipped ? (
-             <div className="flex flex-col items-center justify-center h-full w-full animate-in fade-in zoom-in-95 duration-300">
-               <h3 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight mb-8">{currentQ.question}</h3>
-               <div className="mt-auto flex items-center gap-2 text-sm text-slate-400 font-bold bg-slate-50 px-4 py-2 rounded-full">
-                 <Eye className="h-4 w-4" /> Click to reveal answer
-               </div>
-             </div>
-          ) : (
-             <div className="flex flex-col items-center justify-center h-full w-full animate-in fade-in zoom-in-95 duration-300">
-               <p className="text-xl md:text-2xl font-medium text-white leading-relaxed">{currentQ.answer}</p>
-             </div>
-          )}
+          {/* Front — Question */}
+          <div className="fc-face fc-front">
+            <p className="text-base md:text-lg font-bold text-slate-800 leading-snug flex-1">{currentQ.question}</p>
+            <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold bg-slate-50 border border-slate-100 px-4 py-2 rounded-full mt-4 self-center">
+              <Eye className="h-3.5 w-3.5" /> Click to reveal answer
+            </div>
+          </div>
+          {/* Back — Answer */}
+          <div className="fc-face fc-back">
+            <p className="text-sm md:text-base font-medium text-white leading-relaxed">{currentQ.answer}</p>
+          </div>
         </div>
       </div>
-      
+
+      {/* Navigation */}
       <div className="flex justify-between items-center">
-        <Button 
-          onClick={handlePrev} 
-          disabled={currentIndex === 0} 
-          variant="outline" 
-          className="border-slate-200 text-slate-600 hover:bg-slate-50 font-bold px-6 py-6 h-auto rounded-xl"
+        <button
+          onClick={handlePrev}
+          disabled={currentIndex === 0}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white/70 hover:text-white bg-white/10 hover:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl transition-all"
         >
-           <ChevronLeft className="h-5 w-5 mr-1" /> Previous
-        </Button>
-        <Button 
-          onClick={handleNext} 
-          disabled={currentIndex === questions.length - 1} 
-          className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-8 py-6 h-auto rounded-xl shadow-md shadow-primary-200"
+          <ChevronLeft className="h-4 w-4" /> Previous
+        </button>
+        <button
+          onClick={handleNext}
+          disabled={currentIndex === questions.length - 1}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-500 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl shadow-md transition-all"
         >
-           Next <ChevronRight className="h-5 w-5 ml-1" />
-        </Button>
+          Next <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );

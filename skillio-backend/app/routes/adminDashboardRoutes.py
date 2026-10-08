@@ -54,6 +54,21 @@ from app.Service.employeeRoleManageService import (
     updateEmployeeRole,
     deleteEmployeeRole
 )
+from app.Service.docCategoryManageService import (
+    createDocCategory,
+    getAllDocCategories,
+    getDocCategoryByID,
+    updateDocCategory,
+    deleteDocCategory,
+    getDocCategoryDetails
+)
+from app.Service.documentManageService import (
+    createDocument,
+    getAllDocuments,
+    getDocumentByID,
+    updateDocument,
+    deleteDocument
+)
 import cloudinary.utils
 adminDashboardRoutes = Blueprint('adminDashboardRoutes', __name__)
 
@@ -1033,3 +1048,368 @@ def getSubData(decorated_data):
             "message": f"Server error: {str(e)}"
         }), 500
 
+
+# ---------------------------------------------
+# Document Category Management
+# ---------------------------------------------
+
+@adminDashboardRoutes.route('/doc-category-manage', methods=['POST'])
+@token_required
+def createDocCategoryFun(decorated_data):
+    """
+    Create a document category.
+    Body: { catName, mainOrSub, mainCatID? }
+    - mainCatID is required when mainOrSub == 'sub'
+    - mainCatID is ignored when mainOrSub == 'main'
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "failed", "message": "Request body is missing or not valid JSON"}), 400
+
+        catName   = data.get("catName")
+        mainOrSub = data.get("mainOrSub")
+        mainCatID = data.get("mainCatID")
+
+        if not catName or not mainOrSub:
+            return jsonify({"status": "failed", "message": "catName and mainOrSub are required"}), 400
+
+        if mainOrSub not in ("main", "sub"):
+            return jsonify({"status": "failed", "message": "mainOrSub must be 'main' or 'sub'"}), 400
+
+        if mainOrSub == "sub" and not mainCatID:
+            return jsonify({"status": "failed", "message": "mainCatID is required when mainOrSub is 'sub'"}), 400
+
+        savedResult = createDocCategory(
+            catName=catName,
+            mainOrSub=mainOrSub,
+            companyID=decorated_data.get("id"),
+            insertedBy=decorated_data.get("id"),
+            mainCatID=mainCatID if mainOrSub == "sub" else None
+        )
+        if savedResult:
+            return jsonify({"status": "success", "message": "Document category created"}), 201
+        return jsonify({"status": "failed", "message": "Document category could not be created"}), 500
+
+    except ValueError as e:
+        return jsonify({"status": "failed", "message": str(e)}), 422
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/doc-category-manage', methods=['GET'])
+@token_required
+def getDocCategories(decorated_data):
+    """Retrieve all document categories for the authenticated company."""
+    try:
+        import json
+        categories = getAllDocCategories(companyID=decorated_data.get("id"))
+        return jsonify({
+            "status": "success",
+            "data": [json.loads(cat.to_json()) for cat in categories]
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/doc-category-manage/<categoryID>', methods=['GET'])
+@token_required
+def getDocCategory(decorated_data, categoryID):
+    """Retrieve a single document category by ID."""
+    try:
+        import json
+        category = getDocCategoryByID(categoryID=categoryID, companyID=decorated_data.get("id"))
+        if category:
+            return jsonify({"status": "success", "data": json.loads(category.to_json())}), 200
+        return jsonify({"status": "failed", "message": "Document category not found"}), 404
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/doc-category-manage/<categoryID>', methods=['PUT'])
+@token_required
+def updateDocCategoryByID(decorated_data, categoryID):
+    """
+    Update a document category.
+    Body: { catName, mainOrSub, mainCatID? }
+
+    Behaviour:
+    - 'main' -> 'sub'  : mainCatID required; category becomes sub of that parent.
+    - 'sub'  -> 'main' : if children exist, mainCatID required to re-parent them and
+                         reposition this category as sub of that new parent.
+    - 'main' -> 'main' : plain name update (mainCatID ignored).
+    - 'sub'  -> 'sub'  : update catName and optionally re-parent via mainCatID.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "failed", "message": "Request body is missing or not valid JSON"}), 400
+
+        catName   = data.get("catName")
+        mainOrSub = data.get("mainOrSub")
+        mainCatID = data.get("mainCatID")
+
+        if not catName or not mainOrSub:
+            return jsonify({"status": "failed", "message": "catName and mainOrSub are required"}), 400
+
+        if mainOrSub not in ("main", "sub"):
+            return jsonify({"status": "failed", "message": "mainOrSub must be 'main' or 'sub'"}), 400
+
+        if mainOrSub == "sub" and not mainCatID:
+            return jsonify({"status": "failed", "message": "mainCatID is required when mainOrSub is 'sub'"}), 400
+
+        updatedResult = updateDocCategory(
+            categoryID=categoryID,
+            companyID=decorated_data.get("id"),
+            catName=catName,
+            mainOrSub=mainOrSub,
+            mainCatID=mainCatID
+        )
+        if updatedResult:
+            return jsonify({"status": "success", "message": "Document category updated successfully"}), 200
+        return jsonify({"status": "failed", "message": "Document category not found or update failed"}), 404
+
+    except ValueError as e:
+        return jsonify({"status": "failed", "message": str(e)}), 422
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/doc-category-manage/<categoryID>', methods=['DELETE'])
+@token_required
+def deleteDocCategoryByID(decorated_data, categoryID):
+    """
+    Delete a document category and cascade:
+    - Deletes all sub-categories that reference this category.
+    - Deletes all DocumentBase documents referencing this category (or any of its sub-categories).
+    """
+    try:
+        deletedResult = deleteDocCategory(
+            categoryID=categoryID,
+            companyID=decorated_data.get("id")
+        )
+        if deletedResult:
+            return jsonify({"status": "success", "message": "Document category deleted successfully"}), 200
+        return jsonify({"status": "failed", "message": "Document category not found or delete failed"}), 404
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+# ---------------------------------------------
+# Document Management (DocumentBase)
+# ---------------------------------------------
+
+@adminDashboardRoutes.route('/document-manage', methods=['POST'])
+@token_required
+def createDocumentFun(decorated_data):
+    """
+    Create a document record after the file has been uploaded to Cloudinary by the client.
+
+    Body:
+    {
+        "documentName": str,          required
+        "uploadedUrl": str,           required  (Cloudinary URL from client-side upload)
+        "isMainCategory": bool,       required
+        "mainCategoryID": str,        required
+        "accessLevel": str,           required  ("public" | "restricted" | "private")
+        "documentDescription": str,   optional
+        "subCategoryID": str,         required when isMainCategory == false
+        "accessEntries": [            optional  (only for restricted / private docs)
+            { "roleID": str, "permission": "manage" | "read" }
+        ]
+    }
+
+    NOTE: The client must first call /generate-signature (admin) or /get-signed-url (employee)
+          to obtain Cloudinary credentials, upload the file directly from the browser,
+          and then pass the resulting URL in this request body.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "failed", "message": "Request body is missing or not valid JSON"}), 400
+
+        documentName    = data.get("documentName")
+        uploadedUrl     = data.get("uploadedUrl")
+        isMainCategory  = data.get("isMainCategory")
+        mainCategoryID  = data.get("mainCategoryID")
+        accessLevel     = data.get("accessLevel")
+        documentDescription = data.get("documentDescription")
+        subCategoryID   = data.get("subCategoryID")
+        accessEntries   = data.get("accessEntries")   # list[{roleID, permission}]
+
+        # Required field checks
+        missing = [f for f, v in {
+            "documentName": documentName,
+            "uploadedUrl": uploadedUrl,
+            "isMainCategory": isMainCategory,
+            "mainCategoryID": mainCategoryID,
+            "accessLevel": accessLevel
+        }.items() if v is None]
+        if missing:
+            return jsonify({
+                "status": "failed",
+                "message": f"Missing required fields: {', '.join(missing)}"
+            }), 400
+
+        if not isinstance(isMainCategory, bool):
+            return jsonify({"status": "failed", "message": "isMainCategory must be a boolean"}), 400
+
+        documentID = createDocument(
+            documentName=documentName,
+            uploadedUrl=uploadedUrl,
+            insertedBy=decorated_data.get("id"),
+            isMainCategory=isMainCategory,
+            mainCategoryID=mainCategoryID,
+            companyAccID=decorated_data.get("id"),
+            accessLevel=accessLevel,
+            documentDescription=documentDescription,
+            subCategoryID=subCategoryID,
+            accessEntries=accessEntries
+        )
+
+        return jsonify({
+            "status": "success",
+            "message": "Document created successfully",
+            "documentID": documentID
+        }), 201
+
+    except ValueError as e:
+        return jsonify({"status": "failed", "message": str(e)}), 422
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/document-manage', methods=['GET'])
+@token_required
+def getDocuments(decorated_data):
+    """Retrieve all documents belonging to the authenticated company (admin view)."""
+    try:
+        import json
+        documents = getAllDocuments(companyAccID=decorated_data.get("id"))
+        return jsonify({
+            "status": "success",
+            "data": [json.loads(doc.to_json()) for doc in documents]
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/document-manage/<documentID>', methods=['GET'])
+@token_required
+def getDocument(decorated_data, documentID):
+    """Retrieve a single document by ID (scoped to company)."""
+    try:
+        import json
+        document = getDocumentByID(documentID=documentID, companyAccID=decorated_data.get("id"))
+        if document:
+            return jsonify({"status": "success", "data": json.loads(document.to_json())}), 200
+        return jsonify({"status": "failed", "message": "Document not found"}), 404
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/document-manage/<documentID>', methods=['PUT'])
+@token_required
+def updateDocumentByID(decorated_data, documentID):
+    """
+    Update mutable document fields.
+    Immutable fields (uploadedUrl, timestamp, insertedBy, companyAccID) are NOT updated.
+
+    Body:
+    {
+        "documentName": str,         required
+        "mainCategoryID": str,       required
+        "accessLevel": str,          required  ("public" | "restricted" | "private")
+        "documentDescription": str,  optional
+        "subCategoryID": str,        optional
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "failed", "message": "Request body is missing or not valid JSON"}), 400
+
+        documentName    = data.get("documentName")
+        mainCategoryID  = data.get("mainCategoryID")
+        accessLevel     = data.get("accessLevel")
+        documentDescription = data.get("documentDescription")
+        subCategoryID   = data.get("subCategoryID")
+        
+        isMainCategory = False if subCategoryID else True
+        
+        removingRoles = data.get('removingRoles', [])
+        addingRoles = data.get('addingRoles', [])
+
+        if not isinstance(removingRoles, list) or not isinstance(addingRoles, list):
+            return jsonify({"status": "failed", "message": "removingRoles and addingRoles must be lists"}), 400
+
+        if not all(isinstance(removeItem, str) for removeItem in removingRoles):
+            return jsonify({"status": "failed", "message": "removingRoles items must be strings"}), 400
+
+        if not all(isinstance(addItem, dict) for addItem in addingRoles):
+            return jsonify({"status": "failed", "message": "addingRoles items must be dictionaries"}), 400    
+        
+        missing = [f for f, v in {
+            "documentName": documentName,
+            "mainCategoryID": mainCategoryID,
+            "accessLevel": accessLevel
+        }.items() if v is None]
+        if missing:
+            return jsonify({
+                "status": "failed",
+                "message": f"Missing required fields: {', '.join(missing)}"
+            }), 400
+
+        updatedResult = updateDocument(
+            documentID=documentID,
+            companyAccID=decorated_data.get("id"),
+            documentName=documentName,
+            isMainCategory=isMainCategory,
+            mainCategoryID=mainCategoryID,
+            accessLevel=accessLevel,
+            documentDescription=documentDescription,
+            subCategoryID=subCategoryID,
+            addingRoles=addingRoles,
+            removingRoles=removingRoles
+        )
+
+        if updatedResult:
+            return jsonify({"status": "success", "message": "Document updated successfully"}), 200
+        return jsonify({"status": "failed", "message": "Document not found or update failed"}), 404
+
+    except ValueError as e:
+        return jsonify({"status": "failed", "message": str(e)}), 422
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/document-manage/<documentID>', methods=['DELETE'])
+@token_required
+def deleteDocumentByID(decorated_data, documentID):
+    """
+    Delete a document and its DocumentAccess entries (cascading).
+    """
+    try:
+        deletedResult = deleteDocument(
+            documentID=documentID,
+            companyAccID=decorated_data.get("id")
+        )
+        if deletedResult:
+            return jsonify({"status": "success", "message": "Document deleted successfully"}), 200
+        return jsonify({"status": "failed", "message": "Document not found or delete failed"}), 404
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+@adminDashboardRoutes.route('/get-doc-category-details', methods=['GET'])
+@token_required
+def getDocCategoryDetailsRoute(decorated_data):
+    """
+    Get all document categories for the company in a structured hierarchical format.
+    """
+    try:
+        categories = getDocCategoryDetails(companyID=decorated_data.get("id"))
+        return jsonify({
+            "status": "success",
+            "data": categories
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
