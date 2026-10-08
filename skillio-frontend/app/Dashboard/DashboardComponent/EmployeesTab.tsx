@@ -124,6 +124,7 @@ export default function EmployeesTab() {
       contactnumber: emp.contactnumber ?? '',
       address: emp.address ?? '',
       profileImageUrl: emp.profileImageUrl ?? '',
+      autoGeneratePassStatus: false
     });
     setIsEmpModalOpen(true);
   };

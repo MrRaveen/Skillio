@@ -127,7 +127,7 @@ const SelectPlan = () => {
                             </ul>
                             <Button 
                                 onClick={() => handlePaymentGateway(plan._id.$oid, plan.stripePriceID)} 
-                                variant={isPopular ? 'default' : 'outline'}
+                                variant={isPopular ? 'primary' : 'outline'}
                                 className={`mt-8 w-full font-semibold ${isPopular ? 'shadow-lg shadow-primary-500/25 h-12' : 'border-slate-300'}`}
                             >
                                 {plan.priceMonth === 0 ? 'Get Started' : 'Start Subscription'}

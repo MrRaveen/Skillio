@@ -6,7 +6,7 @@ def performEmployeeLogin(email:str,password:str):
     try:
         employee = Employee.objects(email=email, password=password).first()
         if employee:
-            token = encode_employee_auth_token(str(employee.id), str(employee.companyAccID))
+            token = encode_employee_auth_token(str(employee.id), str(employee.companyAccID),str(employee.employeeRoleID))
             return {
                 "status": "success",
                 "message": "Login successful",

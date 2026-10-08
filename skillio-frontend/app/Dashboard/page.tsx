@@ -8,7 +8,8 @@ import {
   GraduationCap, Clock, PlayCircle, BarChart, Calendar, ChevronRight, Shield, FileText, Eye, Download,
   Building, MapPin, Globe, Mail, Phone, Camera, BrainCircuit, TrendingDown, Lock, Bot,
   CheckCircle2,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import {
   ResponsiveContainer, Tooltip
@@ -25,6 +26,8 @@ import StructureTab from './DashboardComponent/StructureTab';
 import SettingsTab from './DashboardComponent/SettingsTab';
 import NotificationSection from './DashboardComponent/NotificationSection';
 import ProgressTab from './DashboardComponent/ProgressTab';
+import DocumentsTab from './DashboardComponent/DocumentsTab';
+import EmployeeDocumentsTab from './DashboardComponent/EmployeeDocumentsTab';
 import { apiCall } from "@/app/lib/api";
 
 interface DashboardProps {
@@ -46,10 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
     read: boolean;
   }
 
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { id: '1', title: 'New Skill Gap Detected', message: 'Engineering team is missing critical React skills.', time: '2 hrs ago', type: 'alert', read: false },
-    { id: '2', title: 'Training Completed', message: 'Alice Johnson completed "Advanced React Patterns".', time: '5 hrs ago', type: 'success', read: false },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const [activeToast, setActiveToast] = useState<Notification | null>(null);
   const [aiData, setAIData] = useState<any>(null);
@@ -142,7 +142,6 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
     companyContact: '123-456-7890',
     personalContact: '987-654-3210',
     companyEmail: 'info@testcompany.com',
-    accountEmail: 'accounts@testcompany.com',
     ownerEmail: 'owner@testcompany.com',
     password: 'TestPassword123'
   });
@@ -170,6 +169,7 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
     { name: 'Learning Paths', icon: BookOpen, id: 'learning' },
     { name: 'Progress', icon: BarChart, id: 'progress', roles: ['company'] },
     { name: 'Structure', icon: TrendingUp, id: 'analytics', roles: ['company'] },
+    { name: 'Documents', icon: FileText, id: 'documents' },
     { name: 'Settings', icon: Settings, id: 'settings' },
   ].filter(item => !item.roles || item.roles.includes(userType || 'company'));
 
@@ -192,6 +192,7 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
     { name: 'Learning Paths', keywords: 'courses curriculum tracks education', tab: 'learning', icon: BookOpen },
     { name: 'Employee Progress', keywords: 'progress evaluation training scores results', tab: 'progress', icon: BarChart, roles: ['company'] },
     { name: 'Organization Structure', keywords: 'hierarchy teams departments analytics', tab: 'analytics', icon: TrendingUp, roles: ['company'] },
+    { name: 'Documents', keywords: 'files pdf upload categories access', tab: 'documents', icon: FileText },
     { name: 'Account Settings', keywords: 'preferences config security password', tab: 'settings', icon: Settings, roles: ['company'] },
   ].filter(feature => !feature.roles || feature.roles.includes(userType || 'company'));
 
@@ -272,6 +273,14 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
             </button>
             {/* Mobile Title */}
             <span className="md:hidden font-bold text-slate-900 text-lg">{getTabTitle()}</span>
+
+            {/* Course Creation Indicator */}
+            {isGlobalLoading && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 rounded-full border border-primary-100 shadow-sm animate-in fade-in duration-300">
+                <Loader2 className="h-4 w-4 text-primary-600 animate-spin" />
+                <span className="text-xs font-bold text-primary-700 hidden sm:inline-block">Processing</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-4 w-full">
@@ -353,7 +362,7 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
 
             {/* --- LEARNING PATHS TAB --- */}
             {activeTab === 'learning' && (
-              <LearningPathTab></LearningPathTab>
+              <LearningPathTab setIsGlobalLoading={setIsGlobalLoading}></LearningPathTab>
             )}
 
             {/* --- PROGRESS TAB --- */}
@@ -364,6 +373,11 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
             {/* --- ANALYTICS TAB --- */}
             {activeTab === 'analytics' && (
               <StructureTab></StructureTab>
+            )}
+
+            {/* --- DOCUMENTS TAB --- */}
+            {activeTab === 'documents' && (
+              userType === 'company' ? <DocumentsTab /> : <EmployeeDocumentsTab />
             )}
 
             {/* --- SETTINGS TAB --- */}
@@ -398,22 +412,7 @@ const Dashboard: React.FC<DashboardProps> = ({ companyDetails }) => {
         </div>
       )}
 
-      {/* Global AI Loading Overlay */}
-      {isGlobalLoading && (
-        <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-md flex flex-col items-center justify-center text-white">
-          <div className="relative">
-            <div className="h-24 w-24 rounded-full border-4 border-primary-500/30 border-t-primary-500 animate-spin"></div>
-            <Bot className="absolute inset-0 m-auto h-10 w-10 text-primary-400 animate-pulse" />
-          </div>
-          <h2 className="mt-8 text-2xl font-bold tracking-tight">AI is Architecting...</h2>
-          <p className="mt-2 text-slate-300 font-medium animate-pulse">Generating personalized training modules based on skills & role</p>
-          <div className="mt-10 flex gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary-500 animate-bounce [animation-delay:-0.3s]"></div>
-            <div className="h-2 w-2 rounded-full bg-primary-500 animate-bounce [animation-delay:-0.15s]"></div>
-            <div className="h-2 w-2 rounded-full bg-primary-500 animate-bounce"></div>
-          </div>
-        </div>
-      )}
+      {/* Global AI Loading Overlay Removed in favor of top bar indicator */}
 
       {/* AI Result Modal (Chat style) */}
       {isAIModalOpen && aiData && (
