@@ -76,7 +76,7 @@ def createDocument(
 def getAllDocuments(companyAccID: str):
     """Fetch all documents belonging to the company."""
     try:
-        documents = DocumentBase.objects(companyAccID=companyAccID)
+        documents = DocumentBase.objects(companyAccID=companyAccID).exclude('vectorEmbedding')
         for doc in documents:
             url = doc.uploadedUrl
             publicID, resource_type, file_format, delivery_type = extract_cloudinary_details(url=url)
@@ -93,7 +93,7 @@ def getAllDocuments(companyAccID: str):
 def getDocumentByID(documentID: str, companyAccID: str):
     """Fetch a single document by ID, scoped to the company."""
     try:
-        doc = DocumentBase.objects(id=documentID, companyAccID=companyAccID).first()
+        doc = DocumentBase.objects(id=documentID, companyAccID=companyAccID).first().exclude('vectorEmbedding')
         if doc:
             url = doc.uploadedUrl
             publicID, resource_type, file_format, delivery_type = extract_cloudinary_details(url=url)
@@ -207,7 +207,7 @@ def getDocumentsForEmployee(companyAccID: str, roleID: str) -> list:
     accessible_doc_ids = {entry.documentBaseID for entry in access_entries}
 
     # 2. Fetch all documents for the company
-    all_docs = DocumentBase.objects(companyAccID=companyAccID)
+    all_docs = DocumentBase.objects(companyAccID=companyAccID).exclude('vectorEmbedding')
 
     # 3. Build a category lookup cache to avoid repeated DB hits
     category_cache = {}

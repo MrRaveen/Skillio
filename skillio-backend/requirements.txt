@@ -19,3 +19,4 @@ gTTS
 flask-cors
 flask-sse
 langchain-ollama
+sentence-transformers

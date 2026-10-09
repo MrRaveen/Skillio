@@ -1,3 +1,4 @@
+from app.Service.process_document_embedding import process_document_embedding
 from flask import Blueprint, request, jsonify
 from mongoengine.errors import NotUniqueError, ValidationError, DoesNotExist
 from pydantic import ValidationError as PydanticValidationError
@@ -1265,6 +1266,7 @@ def createDocumentFun(decorated_data):
             subCategoryID=subCategoryID,
             accessEntries=accessEntries
         )
+        resultVector = process_document_embedding(doc_id=documentID)
 
         return jsonify({
             "status": "success",
@@ -1411,5 +1413,86 @@ def getDocCategoryDetailsRoute(decorated_data):
             "status": "success",
             "data": categories
         }), 200
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RAG – Document Q&A  (Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@adminDashboardRoutes.route('/admin/document-qa', methods=['POST'])
+@token_required
+def adminAskDocumentQuestion(decorated_data):
+    """
+    Dispatch a Celery RAG task so the admin can ask a question about a document.
+
+    Request body (JSON):
+        {
+            "documentID": "<mongo ObjectId string>",
+            "question":   "<natural-language question>"
+        }
+
+    Response (202):
+        { "status": "processing", "taskID": "<celery-task-id>" }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "failed", "message": "Request body is missing or invalid JSON"}), 400
+
+        doc_id   = data.get("documentID", "").strip()
+        question = data.get("question",   "").strip()
+
+        if not doc_id or not question:
+            return jsonify({"status": "failed", "message": "documentID and question are required"}), 400
+
+        from app.Tasks.rag_answer import answer_document_question
+        task = answer_document_question.delay(doc_id=doc_id, question=question)
+
+        return jsonify({
+            "status": "processing",
+            "taskID": task.id
+        }), 202
+
+    except Exception as e:
+        return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
+
+
+@adminDashboardRoutes.route('/admin/document-qa/<task_id>', methods=['GET'])
+@token_required
+def adminPollDocumentQA(decorated_data, task_id: str):
+    """
+    Poll the result of a previously dispatched RAG task.
+
+    Response (200) when ready:
+        { "status": "success", "answer": "...", "context": "..." }
+    Response (202) when still running:
+        { "status": "processing" }
+    Response (500) on failure:
+        { "status": "failed",   "message": "..." }
+    """
+    try:
+        from celery.result import AsyncResult
+        result = AsyncResult(task_id)
+
+        if result.state == "PENDING" or result.state == "STARTED":
+            return jsonify({"status": "processing"}), 202
+
+        if result.state == "SUCCESS":
+            payload = result.result  # dict returned by task
+            return jsonify({
+                "status":  "success",
+                "answer":  payload.get("answer", ""),
+                "context": payload.get("context", ""),
+                "doc_id":  payload.get("doc_id",  ""),
+            }), 200
+
+        # FAILURE or REVOKED
+        return jsonify({
+            "status":  "failed",
+            "message": str(result.result),
+        }), 500
+
     except Exception as e:
         return jsonify({"status": "failed", "message": f"Unknown error occurred : {str(e)}"}), 500
