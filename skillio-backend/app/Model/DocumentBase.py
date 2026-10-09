@@ -19,3 +19,5 @@ class DocumentBase(db.Document):
     subCategoryID = db.StringField()
     companyAccID = db.StringField(required=True)
     accessLevel = db.StringField(required=False, choices=["public", "restricted", "private"])
+    vectorEmbedding = db.ListField(db.FloatField(), default=list)
+    extractedText = db.StringField()

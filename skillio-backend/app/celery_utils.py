@@ -12,7 +12,8 @@ def celery_init_app(app) -> Celery:
     celery_app.config_from_object(app.config)
     celery_app.conf.update(
         broker_url='redis://localhost:6379/0',
-        result_backend='redis://localhost:6379/0'
+        result_backend='redis://localhost:6379/0',
+        imports=['app.Tasks.rag_answer']
     )
     
     celery_app.set_default()
