@@ -1,5 +1,5 @@
 ## Demo video
-https://drive.google.com/file/d/1OCE5iyreGN--iFjRNJ3OpfcdAhzAL0Ac/view?usp=sharing
+https://drive.google.com/file/d/1SjEDgJoAeGLFSPjV-p6KpO1wLbWQiyj0/view?usp=sharing
 
 ## 📱 Screenshots
 
